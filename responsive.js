@@ -36,4 +36,38 @@
 
   // run now
   apply();
+
+  // Theme toggle injected into .top-nav; persists in localStorage
+  document.addEventListener('DOMContentLoaded', () => {
+    const nav = document.querySelector('.top-nav');
+    if (!nav) return;
+    if (document.getElementById('theme-toggle')) return; // already injected
+
+    const btn = document.createElement('button');
+    btn.id = 'theme-toggle';
+    btn.className = 'theme-toggle';
+
+    function setTheme(name) {
+      document.documentElement.classList.toggle('dark', name === 'dark');
+      btn.textContent = name === 'dark' ? '☀️ Light' : '🌙 Dark';
+      btn.setAttribute('aria-pressed', name === 'dark');
+      localStorage.setItem('theme', name);
+
+      // Special handling for industrial pages: keep layout but switch color variables
+      if (document.body.classList.contains('industrial')) {
+        document.body.classList.toggle('industrial-light', name === 'light');
+        document.body.classList.toggle('industrial-dark', name === 'dark');
+      }
+    }
+
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initial = saved || (prefersDark ? 'dark' : 'light');
+    setTheme(initial);
+
+    btn.addEventListener('click', () => setTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark'));
+
+    nav.appendChild(btn);
+  });
+
 })();

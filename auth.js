@@ -34,7 +34,7 @@ function setSessionIndicator() {
       el.innerHTML = `Ingelogd als <strong>${escapeHtml(data.name)}</strong>` +
         ` <button id="logout-btn" style="margin-left:0.6rem; padding:0.3rem 0.6rem; border-radius:8px;">Uitloggen</button>`;
       const btn = document.getElementById('logout-btn');
-      btn.addEventListener('click', async () => { await api('/api/logout', { method: 'POST' }); localStorage.removeItem('authToken'); setSessionIndicator(); window.location.href = 'index.html'; });
+      btn.addEventListener('click', async () => { await api('/api/logout', { method: 'POST' }); localStorage.removeItem('authToken'); setSessionIndicator(); window.location.href = 'login.html'; });
       // add role-specific links and theme
       document.body.classList.remove('client', 'industrial');
       if (data.role === 'admin' || data.role === 'worker') {
@@ -49,7 +49,7 @@ function setSessionIndicator() {
         a.id = 'quick-links';
         a.style.marginTop = '0.5rem';
         let inner = '';
-        if (data.role === 'admin') inner += `<a class="nav-btn" href="admin.html">Adminpaneel</a> `;
+        if (data.role === 'admin') inner += `<a class="nav-btn" href="ruang-admin/index.html">Adminpaneel</a> `;
         if (data.role === 'worker') inner += `<a class="nav-btn" href="worker.html">Werkruimte</a> `;
         if (data.role === 'client') inner += `<a class="nav-btn" href="appointments.html">Mijn afspraken</a> <a class="nav-btn" href="webshop.html">Webshop</a> `;
         a.innerHTML = inner;
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('authToken', resp.token);
         if (submit) { submit.disabled = false; submit.textContent = oldText; }
         // redirect based on role
-        if (resp.user && resp.user.role === 'admin') window.location.href = 'admin.html';
+        if (resp.user && resp.user.role === 'admin') window.location.href = 'ruang-admin/index.html';
         else if (resp.user && resp.user.role === 'worker') window.location.href = 'worker.html';
         else window.location.href = 'index.html';
       } else {

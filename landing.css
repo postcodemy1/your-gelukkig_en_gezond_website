@@ -28,7 +28,9 @@
   --soft-shadow: 0 10px 30px rgba(43,108,176,0.04);
 
   --max: 900px;
-}  
+  --text: #111;
+}
+
 
 * {
 box-sizing: border-box;
@@ -42,11 +44,11 @@ height: 100%;
 body {
 font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
 background: var(--bg);
-color: #111;
+color: var(--text);
 margin: 0;
 line-height: 1.6;
 font-size: calc(16px * var(--site-scale, 1));
-}
+} 
 
 /* Small helpers that adapt when responsive.js adds classes */
 html.mobile .wrap { padding-left: 0.75rem; padding-right: 0.75rem; }
@@ -162,11 +164,38 @@ border-bottom: 1px solid rgba(0,0,0,0.05);
 } 
 
 .site-header .wrap {
-display: flex;
-align-items: center;
-justify-content: space-between;
-padding: 1rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  max-width: none;
 }
+
+.theme-toggle {
+  background: transparent;
+  border: 1px solid var(--surface-border);
+  color: var(--accent);
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+html.dark {
+  --bg: #0b1220;
+  --card: #0f1720;
+  --accent: #60a5fa;
+  --muted: #94a3b8;
+  --text: #e6eef8;
+  --surface-border: rgba(255,255,255,0.04);
+  --blue-08: rgba(96,165,250,0.06);
+  --soft-shadow: 0 6px 18px rgba(0,0,0,0.5);
+}
+
 
 .brand {
 font-size: 1.25rem;
@@ -218,9 +247,10 @@ color: var(--muted);
 } 
 
 .centered {
-max-width: 420px;
-margin: 6vh auto;
-}
+  max-width: 760px;
+  margin: 6vh 0;
+  margin-left: 0;
+} 
 
 .card {
 background: var(--card);
@@ -420,11 +450,76 @@ margin-top: 2rem;
 body.client .feature-card { border-color: rgba(47,133,90,0.08); box-shadow:0 8px 20px rgba(47,133,90,0.04); }
 
 /* Industrial theme for admin/worker */
-body.industrial { --bg: #0f1720; --card: #0b1220; --accent: #9ca3af; --muted: #9ca3af; color: #e5e7eb; }
+body.industrial {
+  --bg: #0f1720;
+  --card: #0b1220;
+  --accent: #9ca3af;
+  --muted: #e6eef3;
+  --text: #ffffff;
+  color: var(--text);
+}
 body.industrial .site-header { background: linear-gradient(120deg, rgba(14,17,20,0.6), rgba(0,0,0,0.6)); border-bottom-color: rgba(255,255,255,0.03); }
 body.industrial .brand { color: #e6edf3; }
-body.industrial .top-nav a { color: var(--muted); }
+body.industrial .top-nav a { color: var(--text); }
 body.industrial .card, body.industrial .auth-card, body.industrial .feature-card, body.industrial .product-card { background: #0b1220; border: 1px solid rgba(255,255,255,0.03); box-shadow: none; }
+
+/* Ensure muted text is also readable (white) for industrial pages */
+body.industrial .muted { color: var(--text); }
+
+/* Left-align panels in industrial pages (admin / worker) */
+body.industrial .centered {
+  max-width: 840px;
+  margin: 6vh 0;
+  margin-left: 0;
+}
+
+/* Light variant for industrial theme (used when user sets light theme on industrial pages) */
+body.industrial.industrial-light {
+  --bg: #f4fbf9;
+  --card: #ffffff;
+  --accent: #2b6cb0;
+  --muted: #6b7280;
+  --text: #0e1720;
+  color: var(--text);
+}
+
+/* Admin dashboard: left vertical nav + content */
+.admin-dashboard {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+/* Admin dashboard: left vertical nav + content */
+.admin-dashboard {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-nav a {
+  display: block;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+.admin-nav a:hover {
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
+}
+
 body.industrial .nav-btn, body.industrial button { background: #22272e; color: #e6edf3; border-radius: 6px; }
 body.industrial .hero-logo { box-shadow: none; border-radius: 6px; padding: 1rem; background: linear-gradient(90deg,#0b1220,#0f1720); }
 
@@ -465,7 +560,7 @@ body.industrial .hero-logo { box-shadow: none; border-radius: 6px; padding: 1rem
 body.login-page { background: url('login_background.jpg') center/cover no-repeat fixed; }
 body.login-page .site-header, body.login-page .site-footer, body.login-page .wrap { display: none !important; }
 
-..login-card { width:460px; max-width:calc(100% - 3rem); margin:0 auto; padding:2.5rem; border-radius:22px; position:relative; z-index:2; box-sizing:border-box; }
+.login-card { width:460px; max-width:calc(100% - 3rem); margin:0 auto; padding:2.5rem; border-radius:22px; position:relative; z-index:2; box-sizing:border-box; }
 .glass { background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); backdrop-filter: blur(14px) saturate(140%); border: 1px solid rgba(255,255,255,0.09); color: var(--white); box-shadow: 0 40px 90px rgba(2,6,23,0.65); border-radius:22px; }
 .glass::before { content:''; position:absolute; inset:0; border-radius:22px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.03); pointer-events:none; }
 .login-card h1, .login-card h2 { margin:0 0 0.5rem 0; color:var(--white); font-size:2.1rem; }
