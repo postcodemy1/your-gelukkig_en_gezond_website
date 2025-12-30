@@ -1,0 +1,424 @@
+﻿<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webshop - Gelukkig en Gezond</title>
+    <link rel="stylesheet" href="landing.css">
+    <style>
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .product-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: left;
+            box-shadow: 0 12px 28px rgba(43,108,176,0.04);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            display:flex;
+            flex-direction:column;
+        }
+
+        .product-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 18px 36px rgba(43,108,176,0.06);
+        }
+        
+        .product-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+        
+        .product-card h3 {
+            margin: 0 0 0.5rem 0;
+            color: #111;
+        }
+        
+        .product-card p {
+            color: var(--muted);
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        .add-to-cart-btn {
+            background: var(--orange);
+            color: var(--white);
+            width: 100%;
+            border-radius: 8px;
+            padding: 0.6rem 0.8rem;
+            border: 0;
+            cursor: pointer;
+        }
+
+        .add-to-cart-btn:hover {
+            filter: brightness(0.98);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 1rem;
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="wrap">
+            <h1 class="brand"><a href="index.html" aria-label="Naar home"><img src="logo-gezond-en-gelukkig.jpg" alt="Gelukkig en Gezond logo" class="site-logo">Gelukkig en Gezond</a></h1>
+            <nav class="top-nav">
+                <a href="index.html">Home</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="webshop.html">Webshop</a>
+                <a href="contact.html">Contact</a>
+                <a href="over-ons.html">Over Ons</a>
+            </nav>
+            <div id="session-indicator" class="session-indicator"></div>
+        </div>
+    </header>
+    
+    <main class="wrap">
+        <div class="card">
+            <h1 class="page-title"><img src="logo-gezond-en-gelukkig.jpg" alt="Logo Gelukkig en Gezond" class="page-logo">Webshop</h1>
+            <p>Ontdek onze selectie van gezonde en natuurlijke producten.</p>
+            
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-top:0.75rem;">
+              <div style="color:var(--muted)">Onze aanbevolen producten — vriendelijk geselecteerd</div>
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <button id="show-add-form" class="nav-btn btn-blue">Nieuwe toevoegen</button>
+              </div>
+            </div>
+            <!-- Full-screen Add Product Modal -->
+            <div id="add-product-modal" style="display:none;position:fixed;inset:0;background:rgba(5,17,25,0.6);backdrop-filter:blur(3px);z-index:1200;align-items:center;justify-content:center;">
+              <div style="background:var(--card);max-width:860px;width:calc(100% - 2rem);margin:1.5rem auto;border-radius:12px;padding:1.25rem;box-shadow:0 24px 60px rgba(2,12,30,0.35);">
+                <div style="display:flex;gap:1rem;align-items:flex-start;">
+                  <div style="flex:1;">
+                    <h2 style="margin-top:0;margin-bottom:0.5rem;">Nieuw product toevoegen</h2>
+                    <label style="display:block;margin-top:0.5rem;">Naam</label>
+                    <input id="product-name" placeholder="Productnaam" style="padding:0.6rem;border-radius:8px;border:1px solid var(--surface-border);width:100%" />
+                    <label style="display:block;margin-top:0.5rem;">Beschrijving</label>
+                    <textarea id="product-desc" placeholder="Korte omschrijving" style="padding:0.6rem;border-radius:8px;border:1px solid var(--surface-border);width:100%;min-height:80px"></textarea>
+                    <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+                      <div style="flex:1">
+                        <label>Prijs</label>
+                        <input id="product-price" placeholder="Prijs (bv. 19.99)" style="padding:0.5rem;border-radius:8px;border:1px solid var(--surface-border);width:100%;" />
+                      </div>
+                      <div style="width:180px;">
+                        <label>Categorie</label>
+                        <select id="product-cat" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--surface-border);">
+                          <option>Algemeen</option>
+                          <option>Warme deken</option>
+                          <option>Kaars</option>
+                          <option>Veren-kussen</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <label style="display:block;margin-top:0.75rem;">Afbeelding kiezen (of uploaden) (!kijk uit afbeeldingen werken niet!)</label>
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                      <select id="server-images" style="flex:1;padding:0.5rem;border-radius:8px;border:1px solid var(--surface-border);">
+                        <option value="">-- Kies een bestaande afbeelding -- (!kijk uit afbeeldingen werken niet!)</option>
+                      </select>
+                      <input id="upload-image" type="file" accept="image/png,image/jpeg" />
+                    </div>
+
+                    <div id="selected-preview" style="margin-top:0.75rem;"></div>
+
+                    <div style="display:flex;gap:0.5rem;margin-top:1rem;justify-content:flex-end;">
+                      <button id="cancel-add" class="nav-btn btn-outline">Annuleren</button>
+                      <button id="add-product-btn" class="nav-btn btn-green">Toevoegen</button>
+                    </div>
+                  </div>
+                  <div style="width:260px;">
+                    <h3 style="margin-top:0;">Tips</h3>
+                    <p style="color:var(--muted)">Gebruik duidelijke productnamen en kies een afbeelding in .jpg of .png. Je kunt ook afbeeldingen uploaden vanuit je computer (worden opgeslagen in <code>/uploads</code>).</p>
+                    <div style="margin-top:1rem;">
+                      <strong>Beschikbare serverafbeeldingen</strong>
+                      <div id="server-images-list" style="margin-top:0.5rem;color:var(--muted);font-size:0.95rem"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="product-list" class="product-grid" style="margin-top:1rem;">
+                <!-- product cards will be injected here -->
+            </div>
+
+            <div style="margin-top:1rem;display:flex;gap:1rem;align-items:center;">
+              <a href="dashboard.html" class="back-link" style="display:inline-block">← Terug naar Hoofdpagina</a>
+              <button id="cart-button" class="nav-btn btn-blue" style="margin-left:auto;">Winkelwagen (<span id="cart-count">0</span>)</button>
+            </div>
+
+            <!-- Cart modal -->
+            <div id="cart-modal" style="display:none;position:fixed;right:18px;bottom:18px;background:var(--card);border:1px solid var(--surface-border);box-shadow:0 18px 40px rgba(43,108,176,0.08);padding:1rem;border-radius:12px;max-width:360px;z-index:1000;">
+              <h3>Winkelwagen</h3>
+              <div id="cart-items" style="min-height:40px;margin-top:0.5rem;color:var(--muted);"></div>
+              <div style="display:flex;gap:0.5rem;margin-top:0.75rem;justify-content:space-between;align-items:center;">
+                <div id="cart-total" style="font-weight:700;color:var(--accent);">€0.00</div>
+                <div style="display:flex;gap:0.5rem;">
+                  <button id="checkout-btn" class="nav-btn btn-green">Afrekenen</button>
+                  <button id="empty-cart" class="nav-btn btn-outline">Leegmaken</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Product detail modal -->
+            <div id="product-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(5,17,25,0.6);backdrop-filter:blur(3px);z-index:1250;align-items:center;justify-content:center;">
+              <div style="background:var(--card);max-width:920px;width:calc(100% - 2rem);margin:1.5rem auto;border-radius:12px;padding:1.25rem;box-shadow:0 28px 64px rgba(2,12,30,0.35);display:flex;gap:1rem;align-items:flex-start;">
+                <div style="flex:1;min-width:320px;">
+                  <img id="detail-image" src="" alt="" style="width:100%;height:auto;border-radius:8px;object-fit:cover;box-shadow:0 12px 28px rgba(43,108,176,0.06);" />
+                </div>
+                <div style="width:360px;">
+                  <h2 id="detail-name"></h2>
+                  <div id="detail-category" style="color:var(--muted);margin-bottom:0.5rem"></div>
+                  <div id="detail-desc" style="color:var(--muted);margin-bottom:1rem"></div>
+                  <div id="detail-price" style="font-weight:700;color:var(--accent);margin-bottom:1rem"></div>
+                  <div style="display:flex;gap:0.5rem;">
+                    <button id="detail-add-cart" class="nav-btn btn-green">Voeg toe aan winkelwagen</button>
+                    <button id="detail-close" class="nav-btn btn-outline">Sluiten</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+      (function(){
+        // Helpers
+        async function apiGet(url){
+          try { const res = await fetch(url); if(!res.ok) throw new Error('bad'); return await res.json(); } catch(e){ return null; }
+        }
+        async function apiPost(url, body){ try{ const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await res.json(); } catch(e){ return null; } }
+        async function apiDelete(url){ try{ const res = await fetch(url,{method:'DELETE'}); return await res.json(); } catch(e){ return null; } }
+
+        const listEl = document.getElementById('product-list');
+        const form = document.getElementById('add-product-form');
+        const showFormBtn = document.getElementById('show-add-form');
+        const cancelBtn = document.getElementById('cancel-add');
+        const addBtn = document.getElementById('add-product-btn');
+        const nameInput = document.getElementById('product-name');
+        const priceInput = document.getElementById('product-price');
+
+        const cartBtn = document.getElementById('cart-button');
+        const cartModal = document.getElementById('cart-modal');
+        const cartItemsEl = document.getElementById('cart-items');
+        const cartCountEl = document.getElementById('cart-count');
+        const cartTotalEl = document.getElementById('cart-total');
+        const emptyCartBtn = document.getElementById('empty-cart');
+        const checkoutBtn = document.getElementById('checkout-btn');
+
+        let products = [];
+        let cart = { items: [] };
+
+        // Fallback initial set (used only if API unreachable)
+        const fallbackProducts = [
+          {id:'p-1', name:'Warme Deken', price:'29.99', img:'/images/warme-deken.svg'},
+          {id:'p-2', name:'Relaxatiekaars', price:'14.99', img:'/images/relaxatiekaars.svg'},
+          {id:'p-3', name:'Comfortkussen', price:'39.99', img:'/images/comfortkussen.svg'}
+        ];
+
+        async function loadInventory(){
+          const data = await apiGet('/api/inventory');
+          if(data) { products = data; localStorage.setItem('inventory', JSON.stringify(products)); }
+          else { const cached = localStorage.getItem('inventory'); products = cached ? JSON.parse(cached) : fallbackProducts; }
+        }
+
+        async function loadPictures(){
+          const pics = await apiGet('/api/pictures');
+          const sel = document.getElementById('server-images');
+          const list = document.getElementById('server-images-list');
+          sel.innerHTML = '<option value="">-- Kies een bestaande afbeelding --</option>';
+          list.innerHTML = '';
+          if(pics && pics.length){
+            pics.forEach(p => { const name = p.split('/').pop(); const opt = document.createElement('option'); opt.value = p; opt.textContent = name; sel.appendChild(opt); list.innerHTML += `<div>${name}</div>`; });
+          } else { list.textContent = 'Geen serverafbeeldingen gevonden. Voeg afbeeldingen toe aan de `pictures/` map.'; }
+        }
+
+        async function loadCart(){
+          const data = await apiGet('/api/cart');
+          if(data) { cart = data; localStorage.setItem('cart', JSON.stringify(cart)); }
+          else { const cached = localStorage.getItem('cart'); cart = cached ? JSON.parse(cached) : {items:[]} }
+          updateCartUI();
+        }
+
+        function render(){
+          listEl.innerHTML = '';
+          products.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.setAttribute('data-id', p.id);
+            card.innerHTML = `
+              <img src="${p.img||''}" alt="${p.name}" class="product-img" />
+              <h4>${p.name}</h4>
+              <div class="price">€${p.price}</div>
+              <div style="display:flex;gap:0.5rem;margin-top:0.75rem;width:100%;">
+                <button class="add-to-cart-btn" data-id="${p.id}" style="flex:1">In winkelwagen</button>
+                <button class="nav-btn btn-outline remove-btn" data-id="${p.id}">Verwijder</button>
+              </div>
+            `;
+            listEl.appendChild(card);
+
+            // product click -> detail view
+            card.addEventListener('click', (e)=>{
+              // ignore clicks on buttons
+              if(e.target.closest('button')) return;
+              showProductDetail(p);
+            });
+
+            // image error fallback -> replace with placeholder div
+            const img = card.querySelector('img');
+            img.addEventListener('error', ()=>{
+              const placeholder = document.createElement('div');
+              placeholder.style.width='100%'; placeholder.style.height='140px'; placeholder.style.display='flex'; placeholder.style.alignItems='center'; placeholder.style.justifyContent='center'; placeholder.style.background='var(--blue-08)'; placeholder.style.color='var(--muted)'; placeholder.style.borderRadius='8px'; placeholder.textContent = p.name;
+              img.replaceWith(placeholder);
+            });
+          });
+
+          // attach handlers
+          document.querySelectorAll('.remove-btn').forEach(btn=>btn.addEventListener('click', async e=>{
+            e.stopPropagation();
+            const id = e.currentTarget.dataset.id;
+            if(!confirm('Weet je zeker dat je dit item wilt verwijderen?')) return;
+            const apiRes = await apiDelete('/api/inventory/'+id);
+            if(apiRes) { products = products.filter(p=>p.id!==id); localStorage.setItem('inventory', JSON.stringify(products)); render(); }
+            else { // fallback client-side
+              products = products.filter(p=>p.id!==id);
+              localStorage.setItem('inventory', JSON.stringify(products));
+              render();
+            }
+          }));
+
+          document.querySelectorAll('.add-to-cart-btn').forEach(btn=>btn.addEventListener('click', async e=>{
+            e.stopPropagation();
+            const id = e.currentTarget.dataset.id;
+            const p = products.find(x=>x.id===id);
+            if(!p) return;
+            const apiRes = await apiPost('/api/cart', { id: p.id, name: p.name, price: p.price, img: p.img, qty: 1 });
+            if(apiRes) { cart = apiRes; localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); }
+            else { // fallback local
+              const existing = cart.items.find(it => it.id === p.id);
+              if(existing) existing.qty += 1; else cart.items.push({id:p.id,name:p.name, price:p.price, qty:1, img:p.img});
+              localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI();
+            }
+          }));
+        }
+
+        function showProductDetail(p){
+          const modal = document.getElementById('product-detail-modal');
+          document.getElementById('detail-image').src = p.img || '';
+          document.getElementById('detail-name').textContent = p.name;
+          document.getElementById('detail-desc').textContent = p.description || '';
+          document.getElementById('detail-category').textContent = p.category ? 'Categorie: ' + p.category : '';
+          document.getElementById('detail-price').textContent = '€' + p.price;
+          modal.style.display = 'flex';
+
+          document.getElementById('detail-add-cart').onclick = async ()=>{
+            const res = await apiPost('/api/cart', { id: p.id, name: p.name, price: p.price, img: p.img, qty:1 });
+            if(res) { cart = res; localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); alert('Toegevoegd aan winkelwagen'); modal.style.display='none'; }
+            else { const existing = cart.items.find(it=>it.id===p.id); if(existing) existing.qty++; else cart.items.push({id:p.id,name:p.name,price:p.price,qty:1,img:p.img}); localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); alert('Toegevoegd aan winkelwagen (offline)'); modal.style.display='none'; }
+          };
+        }
+
+        function updateCartUI(){
+          const totalCount = cart.items.reduce((s,it)=>s+(it.qty||1),0);
+          cartCountEl.textContent = totalCount;
+          cartItemsEl.innerHTML = '';
+          if(cart.items.length===0) { cartItemsEl.textContent = 'Winkelwagen is leeg.'; cartTotalEl.textContent = '€0.00'; return; }
+          cart.items.forEach(it => {
+            const el = document.createElement('div');
+            el.style.display = 'flex'; el.style.justifyContent = 'space-between'; el.style.alignItems = 'center'; el.style.marginBottom='0.5rem';
+            el.innerHTML = `<div><strong>${it.name}</strong><div style="font-size:0.9rem;color:var(--muted);">${it.qty} × €${it.price}</div></div><div><button class="nav-btn btn-outline cart-remove" data-id="${it.id}">×</button></div>`;
+            cartItemsEl.appendChild(el);
+          });
+          const total = cart.items.reduce((s,it)=> s + (parseFloat(it.price || 0) * (it.qty || 1)), 0);
+          cartTotalEl.textContent = '€' + total.toFixed(2);
+
+          // attach remove handlers
+          document.querySelectorAll('.cart-remove').forEach(btn=>btn.addEventListener('click', async e=>{
+            const id = e.currentTarget.dataset.id;
+            const apiRes = await apiDelete('/api/cart/'+id);
+            if(apiRes) { cart = apiRes; localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); }
+            else { cart.items = cart.items.filter(it=>it.id!==id); localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); }
+          }));
+        }
+
+        cartBtn.addEventListener('click', ()=>{ cartModal.style.display = cartModal.style.display === 'none' ? 'block' : 'none'; });
+        emptyCartBtn.addEventListener('click', async ()=>{ const res = await apiDelete('/api/cart'); cart = res || {items:[]}; localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); });
+        checkoutBtn.addEventListener('click', async ()=>{ alert('Checkout demo — bestelling geplaatst!'); const res = await apiDelete('/api/cart'); cart = res || {items:[]}; localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); cartModal.style.display='none'; });
+
+        // Add product modal handlers
+        const addProductModal = document.getElementById('add-product-modal');
+        const serverImages = document.getElementById('server-images');
+        const uploadImage = document.getElementById('upload-image');
+        const previewDiv = document.getElementById('selected-preview');
+        const cancelAddBtn = document.getElementById('cancel-add');
+        const addProductBtn = document.getElementById('add-product-btn');
+
+        showFormBtn.addEventListener('click', async ()=>{ addProductModal.style.display = 'flex'; await loadPictures(); serverImages.focus(); });
+        cancelAddBtn.addEventListener('click', ()=>{ addProductModal.style.display = 'none'; document.getElementById('product-name').value=''; document.getElementById('product-price').value=''; document.getElementById('product-desc').value=''; document.getElementById('product-cat').value='Algemeen'; previewDiv.innerHTML=''; serverImages.value=''; uploadImage.value=''; });
+
+        serverImages.addEventListener('change', ()=>{
+          const v = serverImages.value; previewDiv.innerHTML=''; if(!v) return; const img = document.createElement('img'); img.src = v; img.style.maxWidth='160px'; img.style.borderRadius='8px'; previewDiv.appendChild(img);
+        });
+        uploadImage.addEventListener('change', ()=>{ previewDiv.innerHTML=''; const f = uploadImage.files && uploadImage.files[0]; if(!f) return; const img = document.createElement('img'); img.src = URL.createObjectURL(f); img.style.maxWidth='160px'; img.style.borderRadius='8px'; previewDiv.appendChild(img); });
+
+        addProductBtn.addEventListener('click', async ()=>{
+          const name = document.getElementById('product-name').value.trim();
+          const price = parseFloat(document.getElementById('product-price').value);
+          const desc = document.getElementById('product-desc').value.trim();
+          const cat = document.getElementById('product-cat').value;
+          if(!name || isNaN(price)) { alert('Voer een naam en geldige prijs in.'); return; }
+
+          let imagePath = '';
+          // If user uploaded a file, upload it first
+          const f = uploadImage.files && uploadImage.files[0];
+          if(f){
+            const fd = new FormData(); fd.append('image', f);
+            const up = await fetch('/api/upload', { method: 'POST', body: fd });
+            if(up.ok){ const j = await up.json(); imagePath = j.path; }
+            else { alert('Upload mislukt'); return; }
+          } else if(serverImages.value){ imagePath = serverImages.value; }
+
+          const apiRes = await apiPost('/api/inventory', { name, description: desc, category: cat, price: price.toFixed(2), img: imagePath });
+          if(apiRes){ products.unshift(apiRes); localStorage.setItem('inventory', JSON.stringify(products)); addProductModal.style.display='none'; document.getElementById('product-name').value=''; document.getElementById('product-price').value=''; document.getElementById('product-desc').value=''; document.getElementById('product-cat').value='Algemeen'; previewDiv.innerHTML=''; serverImages.value=''; uploadImage.value=''; render(); }
+          else { const newp = { id:'p-'+Date.now(), name, description:desc, category:cat, price:price.toFixed(2), img:'/uploads/product-placeholder.png' }; products.unshift(newp); localStorage.setItem('inventory', JSON.stringify(products)); addProductModal.style.display='none'; render(); }
+        });
+
+        // detail modal handlers
+        document.getElementById('detail-close').addEventListener('click', ()=>{ document.getElementById('product-detail-modal').style.display='none'; });
+
+        // init
+        (async function init(){ await loadInventory(); await loadCart(); await loadPictures(); render(); })();
+
+      })();
+    </script>
+    <script src="responsive.js"></script>
+
+    <footer class="site-footer">
+        <div class="wrap">
+            <p class="muted">© 2025 Gelukkig en Gezond. Alle rechten voorbehouden.</p>
+        </div>
+    </footer>
+</body>
+</html>

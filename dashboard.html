@@ -1,0 +1,122 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Dashboard — Gelukkig en Gezond</title>
+    <link rel="stylesheet" href="landing.css" />
+    <style>
+      .nav-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+
+      .nav-btn {
+        display: block;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, var(--accent), rgba(43, 108, 176, 0.8));
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(43, 108, 176, 0.2);
+      }
+
+      .nav-btn:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 8px 20px rgba(43, 108, 176, 0.35);
+      }
+
+      .nav-btn:active {
+        transform: translateY(-2px);
+      }
+
+      .nav-btn h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.25rem;
+      }
+
+      .nav-btn p {
+        margin: 0;
+        font-size: 0.9rem;
+        opacity: 0.95;
+      }
+
+      @media (max-width: 600px) {
+        .nav-buttons {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <h1 class="brand"><a href="index.html" aria-label="Naar home"><img src="logo-gezond-en-gelukkig.jpg" alt="Gelukkig en Gezond logo" class="site-logo">Gelukkig en Gezond</a></h1>
+        <nav class="top-nav">
+          <a href="index.html">Home</a>
+          <a href="dashboard.html">Dashboard</a>
+          <a href="webshop.html">Webshop</a>
+          <a href="contact.html">Contact</a>
+          <a href="over-ons.html">Over Ons</a>
+        </nav>
+        <div id="session-indicator" class="session-indicator"></div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="dashboard-hero card">
+        <div style="display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap;">
+          <div style="flex:1 1 320px;">
+            <h1 class="page-hero-title">Welkom terug</h1>
+            <p class="lead">Fijn dat je er bent — hier vind je een overzicht van je afspraken, berichten en aanbevolen producten.</p>
+            <div style="margin-top:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+              <a href="contact.html" class="nav-btn btn-green">Afspraak maken</a>
+              <a href="webshop.html" class="nav-btn btn-blue">Naar webshop</a>
+            </div>
+          </div>
+          <div style="min-width:220px;">
+            <div class="pill">Actief: 1 gesprek</div>
+            <div style="margin-top:0.75rem;color:var(--muted);">Volgende afspraak:<br><strong>ma 22 dec — 10:30</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:1.25rem;">
+        <h2 style="margin-bottom:1rem;">Snelle acties</h2>
+        <div class="features">
+          <div class="feature-card">
+            <h3>Berichten</h3>
+            <p>Bekijk uw recente berichten en reacties van uw zorgteam.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Afspraken</h3>
+            <p>Bekijk of wijzig uw aankomende afspraken.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Productaanbevelingen</h3>
+            <p>Bekijk aanbevolen producten uit onze webshop.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:1.25rem;">
+        <h2>Persoonlijke notities</h2>
+        <div id="dashboard-content" style="margin-top:0.75rem;min-height:120px;color:var(--muted);">Geen notities — voeg er een toe wanneer je wilt.</div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <p class="muted">© 2025 Gelukkig en Gezond. Alle rechten voorbehouden.</p>
+      </div>
+    </footer>
+
+    <script src="auth.js"></script>
+    <script src="responsive.js"></script>
+  </body>
+</html>

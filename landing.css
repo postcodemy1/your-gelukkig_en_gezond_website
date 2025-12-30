@@ -1,0 +1,522 @@
+/* Simple shared styles for the demo pages */
+/* Subliminal color palette: white, blue, green, red, orange */
+:root {
+  --white: #ffffff;
+  --blue: #2b6cb0;
+  --green: #2f855a;
+  --red: #e53e3e;
+  --orange: #dd6b20;
+
+  /* Friendly, hospital-like background (very pale green-blue) */
+  --bg: #f4fbf9;
+  --card: var(--white);
+  --accent: var(--blue);
+  --muted: #6b7280;
+
+  /* subtle/translucent tints */
+  --blue-08: rgba(43,108,176,0.08);
+  --blue-20: rgba(43,108,176,0.20);
+  --blue-85: rgba(43,108,176,0.85);
+  --green-04: rgba(47,133,90,0.06);
+  --orange-04: rgba(221,107,32,0.06);
+  --red-04: rgba(229,62,62,0.06);
+
+  /* UI measurements */
+  --surface-border: rgba(43,108,176,0.06);
+  --btn-radius: 10px;
+  --card-radius: 12px;
+  --soft-shadow: 0 10px 30px rgba(43,108,176,0.04);
+
+  --max: 900px;
+}  
+
+* {
+box-sizing: border-box;
+}
+
+html,
+body {
+height: 100%;
+}
+
+body {
+font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+background: var(--bg);
+color: #111;
+margin: 0;
+line-height: 1.6;
+font-size: calc(16px * var(--site-scale, 1));
+}
+
+/* Small helpers that adapt when responsive.js adds classes */
+html.mobile .wrap { padding-left: 0.75rem; padding-right: 0.75rem; }
+html.mobile .page-hero-title { font-size: 1.9rem; }
+html.mobile .hero-logo { max-width: 280px; }
+html.mobile .product-grid { grid-template-columns: 1fr; }
+html.mobile .feature-card { padding: 1rem; }
+html.mobile .top-nav { gap: 0.5rem; font-size: 0.95rem; }
+html.mobile .site-logo { width: 34px; }
+html.mobile .nav-btn { padding: 0.6rem 0.8rem; border-radius: 10px; }
+html.high-dpi .hero-logo { box-shadow: 0 22px 48px rgba(43,108,176,0.08); }
+html.high-dpi .product-img { image-rendering: auto; }
+html.high-dpi body { -webkit-font-smoothing: antialiased; }
+
+
+/* Headings use a friendly serif for a calm, trusted tone */
+h1, h2, h3 {
+  font-family: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
+  color: #0e1720;
+}
+
+/* Hero layout */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 2.25rem;
+  align-items: center;
+  margin: 2.25rem 0;
+}
+
+.hero-copy .page-hero-title {
+  font-size: 2.4rem;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.05;
+}
+
+.hero-copy .lead {
+  color: var(--muted);
+  margin-top: 0.25rem;
+  max-width: 50ch;
+}
+
+.hero-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-logo {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 18px 40px rgba(43,108,176,0.06);
+  background: linear-gradient(135deg, rgba(247,253,252,1), rgba(244,251,249,1));
+  padding: 2rem;
+}
+
+/* Features */
+.features {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.feature-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 8px 18px rgba(43,108,176,0.03);
+  flex: 1 1 220px;
+  min-width: 200px;
+}
+
+.feature-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 0.6rem;
+  color: var(--green);
+  background: var(--white);
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 6px 18px rgba(43,108,176,0.04);
+}
+
+@media (max-width: 920px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero-logo { max-width: 280px; }
+  .hero-copy .page-hero-title { font-size: 1.9rem; }
+}
+
+@media (max-width: 520px) {
+  .hero { gap: 1rem; }
+  .features { gap: .75rem; }
+}
+
+.wrap {
+max-width: var(--max);
+margin: 2rem auto;
+padding: 0 1rem;
+}
+
+.site-header {
+background: linear-gradient(120deg, var(--blue-08), transparent);
+border-bottom: 1px solid rgba(0,0,0,0.05);
+} 
+
+.site-header .wrap {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 1rem 0;
+}
+
+.brand {
+font-size: 1.25rem;
+margin: 0;
+color: var(--green);
+} 
+
+/* Make the brand clickable without default link styles */
+.brand a {
+	color: inherit;
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.brand a:focus {
+	outline: 2px solid var(--blue-20);
+	outline-offset: 3px;
+} 
+
+/* Logo styling */
+.site-logo {
+	width: 40px;
+	height: auto;
+	border-radius: 8px;
+	object-fit: cover;
+	display: inline-block;
+	box-shadow: 0 6px 18px rgba(43,108,176,0.06);
+} 
+
+.page-title {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.6rem;
+}
+
+.page-logo {
+	width: 34px;
+	height: auto;
+	border-radius: 6px;
+	object-fit: cover;
+	display: inline-block;
+}
+
+.session-indicator {
+font-size: 0.9rem;
+color: var(--muted);
+} 
+
+.centered {
+max-width: 420px;
+margin: 6vh auto;
+}
+
+.card {
+background: var(--card);
+border-radius: var(--card-radius);
+padding: 1.5rem;
+box-shadow: var(--soft-shadow);
+} 
+
+h1,
+h2 {
+margin: 0 0 0.75rem 0;
+}
+
+label {
+display: block;
+margin-top: 0.75rem;
+font-size: 0.9rem;
+}
+
+input {
+width: 100%;
+padding: 0.6rem;
+border-radius: 8px;
+border: 1px solid var(--surface-border);
+margin-top: 0.25rem;
+transition: box-shadow 0.12s ease, border-color 0.12s ease;
+}
+input:focus {
+	outline: none;
+	border-color: var(--accent);
+	box-shadow: 0 6px 18px rgba(43,108,176,0.06);
+} 
+
+button {
+background: var(--accent);
+color: var(--white);
+padding: 0.75rem 1rem;
+border-radius: var(--btn-radius);
+border: 0;
+margin-top: 0.9rem;
+cursor: pointer;
+box-shadow: 0 6px 16px rgba(43,108,176,0.06);
+transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+/* Utility classes for the full palette */
+.btn-blue { background: var(--blue); color: var(--white); }
+.btn-green { background: var(--green); color: var(--white); }
+
+/* override CTA on login to deep navy */
+.login-card .btn-green { background:#062d4a; color:#fff; border:0; box-shadow:none; }
+.btn-red { background: var(--red); color: var(--white); }
+.btn-orange { background: var(--orange); color: var(--white); }
+
+/* subtle hover feedback for palette buttons */
+.btn-blue:hover, .btn-green:hover, .btn-red:hover, .btn-orange:hover {
+	filter: brightness(0.96);
+	transform: translateY(-3px);
+}
+
+/* Nav/button primitives */
+.nav-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.6rem;
+	padding: 0.8rem 1rem;
+	border-radius: var(--btn-radius);
+	background: var(--accent);
+	color: var(--white);
+	text-decoration: none;
+	box-shadow: 0 6px 18px rgba(43,108,176,0.06);
+	transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.nav-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(43,108,176,0.08); }
+.nav-btn.nav-gradient { background: linear-gradient(135deg,var(--accent),var(--blue-85)); }
+.nav-btn.btn-outline { background: var(--card); color: var(--accent); border: 1px solid var(--surface-border); box-shadow: none; }
+
+/* Small friendly back links, badges and CTAs */
+.back-link { display:inline-block; margin-top:1rem; color: var(--accent); text-decoration: none; }
+.back-link:hover { background: var(--blue-08); border-radius: 8px; }
+
+.pill { display:inline-block; padding:0.25rem 0.5rem; border-radius:999px; background:var(--green-04); color:var(--green); font-weight:600; }
+
+/* Product CTA */
+.add-to-cart-btn { background: var(--orange); color: var(--white); border-radius: 8px; border: 0; padding: 0.6rem 0.9rem; cursor: pointer; }
+.add-to-cart-btn:hover { transform: translateY(-3px); filter: brightness(0.98); }
+
+/* Contact CTA */
+.contact-btn { background: var(--green); color: var(--white); border-radius: 8px; border: 0; padding: 0.65rem 0.9rem; cursor: pointer; }
+.contact-btn:hover { transform: translateY(-3px); }
+
+
+
+.muted {
+color: var(--muted);
+font-size: 0.9rem;
+margin-top: 0.9rem;
+}
+
+.site-footer {
+padding: 2rem 0;
+color: var(--muted);
+font-size: 0.9rem;
+border-top: 1px solid rgba(0,0,0,0.03);
+margin-top: 2rem;
+}
+
+@media (max-width: 520px) {
+.wrap {
+margin: 1rem auto;
+padding: 0 0.75rem;
+}
+
+.centered {
+margin-top: 2rem;
+}
+}
+
+/* Product grid */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.product-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 12px 28px rgba(43,108,176,0.04);
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+}
+.product-img {
+  width:100%;
+  height:140px;
+  object-fit:cover;
+  border-radius:8px;
+  margin-bottom:0.75rem;
+}
+.remove-btn { border: 1px solid var(--surface-border); background: var(--card); color: var(--muted); }
+
+@media (max-width: 920px) {
+  .product-grid { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 520px) {
+  .product-grid { grid-template-columns: 1fr; }
+  .hero { grid-template-columns: 1fr; }
+}
+
+/* Modal and preview helpers */
+#add-product-modal, #product-detail-modal { display: none; align-items: center; justify-content: center; }
+#add-product-modal .selected-image-preview img, #selected-preview img { max-width: 160px; border-radius: 8px; }
+.product-card { cursor: pointer; }
+
+/* Top navigation bar */
+.top-nav {
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+}
+
+.top-nav a {
+	color: var(--accent);
+	text-decoration: none;
+	padding: 0.35rem 0.6rem;
+	border-radius: 8px;
+	font-weight: 500;
+	transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.top-nav a:hover {
+	background: var(--blue-08);
+	transform: translateY(-2px);
+} 
+
+@media (max-width: 720px) {
+	.site-header .wrap {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.5rem;
+	}
+	.top-nav {
+		width: 100%;
+		justify-content: space-between;
+	}
+}
+
+/* Auth card + small UI tweaks */
+.auth-card { max-width: 520px; margin: 2.5rem auto; padding: 1.25rem; border-radius: 12px; }
+.auth-tabs { display:flex; gap:8px; margin-bottom:1rem; }
+.auth-tabs button { flex:1; padding:0.6rem; border-radius:8px; border:1px solid var(--surface-border); background:transparent; cursor:pointer; }
+.auth-tabs button.active, .auth-tabs button:focus { background:var(--accent); color:var(--white); box-shadow:0 6px 18px rgba(43,108,176,0.06); }
+
+/* subtle client tweaks */
+body.client .feature-card { border-color: rgba(47,133,90,0.08); box-shadow:0 8px 20px rgba(47,133,90,0.04); }
+
+/* Industrial theme for admin/worker */
+body.industrial { --bg: #0f1720; --card: #0b1220; --accent: #9ca3af; --muted: #9ca3af; color: #e5e7eb; }
+body.industrial .site-header { background: linear-gradient(120deg, rgba(14,17,20,0.6), rgba(0,0,0,0.6)); border-bottom-color: rgba(255,255,255,0.03); }
+body.industrial .brand { color: #e6edf3; }
+body.industrial .top-nav a { color: var(--muted); }
+body.industrial .card, body.industrial .auth-card, body.industrial .feature-card, body.industrial .product-card { background: #0b1220; border: 1px solid rgba(255,255,255,0.03); box-shadow: none; }
+body.industrial .nav-btn, body.industrial button { background: #22272e; color: #e6edf3; border-radius: 6px; }
+body.industrial .hero-logo { box-shadow: none; border-radius: 6px; padding: 1rem; background: linear-gradient(90deg,#0b1220,#0f1720); }
+
+/* Admin 'Topdesk-like' small layout */
+.admin-dashboard { display:grid; grid-template-columns:220px 1fr; gap:1rem; }
+.admin-nav { background: rgba(255,255,255,0.02); border-radius:8px; padding:0.75rem; }
+.admin-nav a { display:block; padding:0.5rem 0.6rem; color:var(--muted); text-decoration:none; border-radius:6px; }
+.admin-nav a:hover { background: rgba(255,255,255,0.02); color:var(--white); }
+
+/* Login / register glass hero */
+/* Full-bleed background using the provided image (login_background.jpg) */
+.login-hero {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  width:100%;
+  gap: 2rem;
+  padding: 0 2rem;
+  background-image: url('login_background.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  /* darker overlay to improve contrast */
+  position: relative;
+}
+.login-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(3,7,18,0.25), rgba(3,7,18,0.45));
+  pointer-events: none;
+}
+/* Left decorative part removed for dedicated login */
+.login-left { display:none; }
+
+/* Full-bleed login page background and glass style overrides */
+body.login-page { background: url('login_background.jpg') center/cover no-repeat fixed; }
+body.login-page .site-header, body.login-page .site-footer, body.login-page .wrap { display: none !important; }
+
+..login-card { width:460px; max-width:calc(100% - 3rem); margin:0 auto; padding:2.5rem; border-radius:22px; position:relative; z-index:2; box-sizing:border-box; }
+.glass { background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); backdrop-filter: blur(14px) saturate(140%); border: 1px solid rgba(255,255,255,0.09); color: var(--white); box-shadow: 0 40px 90px rgba(2,6,23,0.65); border-radius:22px; }
+.glass::before { content:''; position:absolute; inset:0; border-radius:22px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.03); pointer-events:none; }
+.login-card h1, .login-card h2 { margin:0 0 0.5rem 0; color:var(--white); font-size:2.1rem; }
+.login-card .muted { color: rgba(255,255,255,0.92); font-size:0.98rem; }
+.login-card label { color: rgba(255,255,255,0.95); font-size:0.95rem; }
+.login-card input, .login-card select { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); color:var(--white); padding:0.8rem 0.9rem; border-radius:10px; }
+.divider { color: rgba(255,255,255,0.6); text-align:center; }
+.brand-small { display:flex; gap:0.8rem; align-items:center; margin-bottom:0.9rem; color:var(--white); font-weight:700; }
+.brand-small .site-logo { width:48px; height:auto; border-radius:10px; }
+
+@media (max-width:920px) { .login-card { margin:1rem auto; width:100%; } }
+
+/* Theme variables for light/dark (can be toggled by JavaScript)
+   Use body.light-theme or body.dark-theme to switch visual tone */
+:root {
+  --login-overlay-light: rgba(255,255,255,0.06);
+  --login-overlay-dark: rgba(0,0,0,0.35);
+  --login-glass-light: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.8));
+  --login-glass-dark: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  --login-text-light: #0b1720;
+  --login-text-dark: #ffffff;
+}
+
+body.light-theme.login-page .login-hero::after { background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.0)); }
+body.dark-theme.login-page .login-hero::after { background: linear-gradient(180deg, rgba(3,7,18,0.22), rgba(3,7,18,0.42)); }
+
+body.light-theme .glass { background: var(--login-glass-light); color: var(--login-text-light); box-shadow: 0 12px 30px rgba(2,6,23,0.06); border: 1px solid rgba(2,6,23,0.06); }
+body.dark-theme .glass { background: var(--login-glass-dark); color: var(--login-text-dark); box-shadow: 0 40px 90px rgba(2,6,23,0.65); border: 1px solid rgba(255,255,255,0.06); }
+
+/* Theme toggle (moon -> sun) */
+.theme-toggle { position:absolute; top:10px; right:12px; width:48px; height:40px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); cursor:pointer; z-index:8; backdrop-filter: blur(6px); transition: transform 200ms ease, box-shadow 200ms ease; }
+.theme-toggle:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
+.theme-toggle svg { width:22px; height:22px; transition: transform 300ms ease, opacity 300ms ease; color:var(--white); }
+.theme-toggle .sun { transform: scale(0); opacity:0; }
+body.light-theme .theme-toggle .sun { transform: scale(1); opacity:1; }
+body.light-theme .theme-toggle .moon { transform: scale(0); opacity:0; }
+body.dark-theme .theme-toggle .sun { transform: scale(0); opacity:0; }
+body.dark-theme .theme-toggle .moon { transform: scale(1); opacity:1; }
+
+/* Responsive tweaks for common large desktop resolutions to keep the card centered nicely */
+@media (min-width:1600px) and (min-height:900px) {
+  .login-card { transform: translateY(-10px); width: 480px; padding:2.75rem; }
+}
+@media (min-width:1920px) and (min-height:1080px) {
+  .login-card { width:520px; padding:3rem; transform: translateY(-20px); }
+}
+
+/* Keep the card from getting too tall on short viewports */
+.login-card { max-height: calc(100vh - 6rem); overflow:auto; }
+.login-card::-webkit-scrollbar { width: 8px; }
+.login-card::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius:8px; }
+
+
+

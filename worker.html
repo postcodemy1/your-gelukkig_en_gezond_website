@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Werkruimte — Gelukkig en Gezond</title>
+    <link rel="stylesheet" href="landing.css" />
+  </head>
+  <body class="industrial">
+    <header class="site-header">
+      <div class="wrap">
+        <h1 class="brand"><a href="index.html">Gelukkig en Gezond — Medewerker</a></h1>
+        <nav class="top-nav">
+          <a href="index.html">Home</a>
+          <a href="dashboard.html">Dashboard</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="card centered">
+        <h1>Werkruimte</h1>
+        <p class="muted">Dit is de werkruimte voor medewerkers. Alleen zichtbaar voor aangemelde medewerkers.</p>
+        <div id="worker-content">
+          <p class="muted">Bezig met controleren van toegangsrechten…</p>
+        </div>
+
+        <section class="card" style="margin-top:1rem">
+          <h2>Producten beheren</h2>
+          <form id="add-product-form" style="margin-top:0.6rem;display:grid;gap:0.5rem;grid-template-columns:1fr 120px;align-items:end;">
+            <div>
+              <label>Naam</label>
+              <input name="name">
+            </div>
+            <div>
+              <label>Prijs (€)</label>
+              <input name="price" type="text">
+            </div>
+            <div style="grid-column:1 / -1">
+              <label>Beschrijving</label>
+              <input name="description">
+            </div>
+            <div style="grid-column:1 / -1;display:flex;gap:8px">
+              <button class="btn-blue" type="submit">Toevoegen</button>
+              <button id="reload-inv" class="btn-outline" type="button">Vernieuwen</button>
+            </div>
+          </form>
+          <div id="inv-list" style="margin-top:1rem" class="product-grid"></div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap"><p class="muted">© 2025 Gelukkig en Gezond.</p></div>
+    </footer>
+
+    <script src="auth.js"></script>
+    <script>
+      async function loadInventory(){
+        const inv = await api('/api/inventory');
+        const list = document.getElementById('inv-list');
+        list.innerHTML = '';
+        if (!inv || !inv.length) { list.innerHTML = '<p class="muted">Geen producten gevonden</p>'; return; }
+        inv.forEach(i => {
+          const el = document.createElement('div'); el.className = 'product-card';
+          el.innerHTML = `<img class="product-img" src="${i.img || '/images/warme-deken.svg'}"><h3>${i.name}</h3><p class="muted">€${i.price}</p><div style="margin-top:auto"><button data-id="${i.id}" class="remove-inv-btn remove-btn">Verwijder</button></div>`;
+          list.appendChild(el);
+        });
+        Array.from(document.querySelectorAll('.remove-inv-btn')).forEach(b => b.addEventListener('click', async (ev)=>{
+          const id = ev.currentTarget.dataset.id; await api('/api/inventory/' + id, { method: 'DELETE' }); loadInventory();
+        }));
+      }
+
+      document.getElementById('add-product-form').addEventListener('submit', async (ev)=>{
+        ev.preventDefault(); const f = new FormData(ev.currentTarget); const body = { name:f.get('name'), price:f.get('price'), description:f.get('description') };
+        const resp = await api('/api/inventory', { method: 'POST', body });
+        if (resp && resp.id) { ev.currentTarget.reset(); loadInventory(); } else alert(resp.error || 'Kon product niet toevoegen');
+      });
+      document.getElementById('reload-inv').addEventListener('click', ()=>loadInventory());
+
+      api('/api/me').then(u => {
+        if (!u || u.error || u.role !== 'worker') {
+          document.getElementById('worker-content').innerHTML = '<p class="muted">Toegang geweigerd. Alleen medewerkers mogen deze pagina zien.</p>';
+        } else {
+          document.getElementById('worker-content').innerHTML = '<p>Welkom, ' + (u.name || '') + '. Hier kun je werkgerelateerde taken uitvoeren.</p>';
+          loadInventory();
+        }
+      }).catch(()=>{ document.getElementById('worker-content').innerHTML = '<p class="muted">Niet ingelogd.</p>'; });
+    </script>
+  </body>
+</html>

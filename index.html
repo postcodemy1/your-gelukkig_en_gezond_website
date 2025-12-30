@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Gelukkig en Gezond — Home</title>
+    <!-- Friendly typography for a supportive, hospital-like feel -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="landing.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <h1 class="brand"><a href="index.html" aria-label="Naar home"><img src="logo-gezond-en-gelukkig.jpg" alt="Gelukkig en Gezond logo" class="site-logo">Gelukkig en Gezond</a></h1>
+        <nav class="top-nav">
+          <a href="index.html">Home</a>
+          <a href="dashboard.html">Dashboard</a>
+          <a href="webshop.html">Webshop</a>
+          <a href="contact.html">Contact</a>
+          <a href="over-ons.html">Over Ons</a>
+          <a href="login.html" id="login-link">Inloggen / Registreren</a>
+        </nav>
+        <div id="session-indicator" class="session-indicator"></div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="hero">
+        <div class="hero-copy">
+          <h1 class="page-hero-title">Welkom bij Gelukkig en Gezond</h1>
+          <p class="lead">Wij ondersteunen jou op je reis naar meer welzijn — medisch, mentaal en sociaal. Onze benadering is vriendelijk, zorgzaam en persoonlijk.</p>
+
+          <div class="hero-ctas" style="margin-top:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <a href="contact.html" class="nav-btn btn-green">Maak afspraak</a>
+            <a href="webshop.html" class="nav-btn btn-outline">Bekijk webshop</a>
+          </div>
+
+          <div class="features" style="margin-top:2rem;">
+            <div class="feature-card">
+              <div class="feature-icon">🍃</div>
+              <h3>Welkom</h3>
+              <p>Welkom bij ons! Wij zijn Gezond en Gelukkig, een gepassioneerd team van professionals met een missie.</p>
+            </div>
+          
+            <div class="feature-card">
+              <div class="feature-icon">🪷</div>
+              <h3>Relaties & Familie</h3>
+              <p>Ondersteuning bij het verbeteren van relaties en communicatie.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-image" aria-hidden="true">
+          <img src="logo-gezond-en-gelukkig.jpg" alt="Gelukkig en Gezond" class="hero-logo">
+        </div>
+      </section>
+
+      <!-- existing content placeholder (kept for future sections) -->
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <p class="muted">© 2025 Gelukkig en Gezond. Alle rechten voorbehouden.</p>
+      </div>
+    </footer>
+  <!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+<script src="auth.js"></script>
+<script src="responsive.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "09b87fab-18b8-4ab0-a885-860ada967eb9",
+    "name": "Administrator",
+    "email": "admin@example.com",
+    "passwordHash": "$2b$10$MVR8HFn92uB3.ZEL0nHg1.cV3k9okVCxP9YR..TptDVrsS5f8FJCm",
+    "role": "admin"
+  },
+  {
+    "id": "4d4adec8-26c5-4329-8a23-87e493cff6c8",
+    "name": "jamie",
+    "email": "admin@admin.com",
+    "passwordHash": "$2b$10$VHWjL3qet0prA0SLnmYHjerGwBZGCbe6wcdJ0lNvXwX5OrqPSx.cS",
+    "role": "worker"
+  },
+  {
+    "id": "50054af7-5f58-4467-86c0-2748bd265612",
+    "name": "piet",
+    "email": "test@test.com",
+    "passwordHash": "$2b$10$EmOqieyl.1MTB1NjmB44ROqLVgZLy1EafkdKmqRM7L/5PMwGhsDnS",
+    "role": "client"
+  }
+]

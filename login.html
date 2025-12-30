@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Inloggen / Registreren — Gelukkig en Gezond</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="landing.css" />
+  </head>
+  <body class="login-page">
+    <main class="login-hero">
+      <div class="login-card glass" role="main" aria-labelledby="login-title">
+        <button class="theme-toggle" id="theme-toggle" aria-pressed="false" title="Wissel licht/donker thema">
+          <!-- moon -->
+          <svg class="moon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor"/></svg>
+          <!-- sun -->
+          <svg class="sun" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6.76 4.84l-1.8-1.79L3.17 4.84l1.79 1.79 1.8-1.79zM1 13h3v-2H1v2zm10-9h2V1h-2v3zM6.76 19.16l1.8 1.79 1.79-1.79-1.8-1.79-1.79 1.79zM17.24 4.84l1.79-1.79 1.79 1.79-1.79 1.79-1.79-1.79zM20 11v2h3v-2h-3zM11 20h2v3h-2v-3zM17.24 19.16l1.79 1.79 1.8-1.79-1.79-1.79-1.8 1.79zM12 6a6 6 0 100 12 6 6 0 000-12z" fill="currentColor"/></svg>
+        </button>
+        <div class="brand-small"><img src="logo-gezond-en-gelukkig.jpg" alt="logo" class="site-logo">Gelukkig en Gezond</div>
+        <h1 id="login-title">Inloggen</h1>
+        <p class="muted">Log in om afspraken en bestellingen te beheren.</p>
+
+        <form id="login-form" class="login-form" style="margin-top:1rem">
+          <label for="email">E-mail</label>
+          <input required name="email" id="email" type="email" autocomplete="username">
+
+          <label for="password">Wachtwoord</label>
+          <div style="position:relative">
+            <input required name="password" id="password" type="password" autocomplete="current-password">
+            <button id="toggle-pw" type="button" aria-label="Toon wachtwoord" style="position:absolute;right:8px;top:8px;padding:6px;border-radius:6px;border:0;background:transparent;color:var(--accent);cursor:pointer">👁️</button>
+          </div>
+
+          <div id="login-msg" class="muted" style="margin-top:0.5rem"></div>
+          <button type="submit" class="btn-green" style="width:100%;margin-top:0.8rem">Inloggen</button>
+        </form>
+
+        <div class="divider" style="margin:1rem 0">Of</div>
+
+        <div style="text-align:center">
+          <button id="show-register" class="btn-outline">Registreren</button>
+        </div>
+
+        <form id="register-form" style="display:none;margin-top:1rem">
+          <h2>Registreren</h2>
+          <label for="r-name">Naam</label>
+          <input name="name" id="r-name" type="text">
+          <label for="r-email">E-mail</label>
+          <input name="email" id="r-email" type="email" autocomplete="email">
+          <label for="r-password">Wachtwoord</label>
+          <input name="password" id="r-password" type="password" autocomplete="new-password">
+          <label for="r-role">Rol</label>
+          <select name="role" id="r-role"><option value="client">Bezoeker / Cliënt</option><option value="worker">Medewerker</option></select>
+          <div id="register-msg" class="muted" style="margin-top:0.5rem"></div>
+          <button type="submit" class="btn-blue" style="width:100%;margin-top:0.6rem">Registreren</button>
+          <div style="margin-top:0.6rem;text-align:center"><a href="#" id="back-to-login" class="muted">Terug naar inloggen</a></div>
+        </form>
+
+      </div>
+    </main>
+
+    <script src="auth.js"></script>
+    <script>
+      // UI interactions
+      document.getElementById('show-register').addEventListener('click', ()=>{
+        document.getElementById('register-form').style.display = 'block';
+        document.querySelector('.login-form').style.display = 'none';
+        document.getElementById('login-msg').textContent = '';
+      });
+      document.getElementById('back-to-login').addEventListener('click', (ev)=>{ ev.preventDefault(); document.getElementById('register-form').style.display = 'none'; document.querySelector('.login-form').style.display = 'block'; document.getElementById('register-msg').textContent = ''; });
+
+      document.getElementById('toggle-pw').addEventListener('click', ()=>{
+        const pw = document.getElementById('password'); pw.type = pw.type === 'password' ? 'text' : 'password';
+      });
+
+      function showMessage(id, text) { const el = document.getElementById(id); if (el) { el.textContent = text; } }
+    </script>
+    <script src="responsive.js"></script>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+[
+  {
+    "id": "initial-1",
+    "name": "Warme Deken",
+    "description": "Een warme deken voor comfort en rust.",
+    "category": "Warme deken",
+    "price": "29.99",
+    "img": "/pictures/warme-deken.jpg"
+  },
+  {
+    "id": "initial-2",
+    "name": "Relaxatiekaars",
+    "description": "Kalmerende geurkaars om te ontspannen.",
+    "category": "Kaars",
+    "price": "14.99",
+    "img": "/pictures/relaxatiekaars.jpg"
+  },
+  {
+    "id": "initial-3",
+    "name": "Comfortkussen",
+    "description": "Vulling met veren voor zacht comfort.",
+    "category": "Veren-kussen",
+    "price": "39.99",
+    "img": "/pictures/comfortkussen.jpg"
+  }
+]

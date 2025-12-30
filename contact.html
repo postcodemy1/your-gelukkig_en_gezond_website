@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact - Gelukkig en Gezond</title>
+    <link rel="stylesheet" href="landing.css">
+    <style>
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--accent);
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-in-out;
+        }
+
+        .toast.show {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .toast.hide {
+            animation: slideOut 0.3s ease-in-out forwards;
+        }
+
+        .contact-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .contact-info-item {
+            padding: 1.5rem;
+            background: var(--bg);
+            border-radius: 8px;
+        }
+
+        .contact-info-item h3 {
+            margin: 0 0 0.5rem 0;
+            color: var(--accent);
+        }
+
+        .contact-info-item p {
+            margin: 0;
+            color: var(--muted);
+        }
+
+        @media (max-width: 600px) {
+            .contact-info {
+                grid-template-columns: 1fr;
+            }
+
+            .toast {
+                left: 1rem;
+                right: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="wrap">
+            <h1 class="brand"><a href="index.html" aria-label="Naar home"><img src="logo-gezond-en-gelukkig.jpg" alt="Gelukkig en Gezond logo" class="site-logo">Gelukkig en Gezond</a></h1>
+                <nav class="top-nav">
+                    <a href="index.html">Home</a>
+                    <a href="dashboard.html">Dashboard</a>
+                    <a href="webshop.html">Webshop</a>
+                    <a href="contact.html">Contact</a>
+                    <a href="over-ons.html">Over Ons</a>
+                </nav>
+            <div id="session-indicator" class="session-indicator"></div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <div class="card">
+            <h1 class="page-title"><img src="logo-gezond-en-gelukkig.jpg" alt="Logo Gelukkig en Gezond" class="page-logo">Contact</h1>
+            <p>Neem contact met ons op voor vragen en informatie.</p>
+
+            <div class="contact-info">
+                <div class="contact-info-item">
+                    <h3>Email</h3>
+                    <p>info@gelukigenezond.nl</p>
+                </div>
+                <div class="contact-info-item">
+                    <h3>Telefoon</h3>
+                    <p>+31 (0)6 12345678</p>
+                </div>
+                <div class="contact-info-item">
+                    <h3>Adres</h3>
+                    <p>Straatnaam 123<br>1234 AB Amsterdam</p>
+                </div>
+                <div class="contact-info-item">
+                    <h3>Openingstijden</h3>
+                    <p>Ma-Vr: 09:00 - 17:00<br>Za-Zo: Gesloten</p>
+                </div>
+            </div>
+
+            <button class="contact-btn" onclick="showContactForm()">Contactformulier</button>
+            <a href="dashboard.html" class="back-link">← Terug naar Hoofdpagina</a>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="wrap">
+            <p class="muted">© 2025 Gelukkig en Gezond. Alle rechten voorbehouden.</p>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        function showContactForm() {
+            const toast = document.getElementById('toast');
+            toast.textContent = '📧 Stuur ons een email op info@gelukigenezond.nl of bel +31 (0)6 12345678 voor meer informatie!';
+            toast.classList.add('show');
+            toast.classList.remove('hide');
+
+            setTimeout(() => {
+                toast.classList.add('hide');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 300);
+            }, 5000);
+        }
+    </script>
+    <script src="responsive.js"></script>
+</body>
+</html>

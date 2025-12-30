@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mijn Afspraken — Gelukkig en Gezond</title>
+  <link rel="stylesheet" href="landing.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <h1 class="brand"><a href="index.html">Gelukkig en Gezond</a></h1>
+      <nav class="top-nav">
+        <a href="index.html">Home</a>
+        <a href="webshop.html">Webshop</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="centered card">
+      <h1>Mijn afspraken</h1>
+      <p class="muted">Beheer je afspraken hier. Je kunt nieuwe afspraken toevoegen of bestaande annuleren.</p>
+
+      <form id="appt-form" style="margin-top:1rem">
+        <label for="datetime">Datum & Tijd</label>
+        <input id="datetime" name="datetime" type="datetime-local" required>
+        <label for="notes">Notities (optioneel)</label>
+        <input id="notes" name="notes" type="text">
+        <button class="btn-green" type="submit">Afspraak maken</button>
+      </form>
+
+      <h2 style="margin-top:1.25rem">Komende afspraken</h2>
+      <div id="appointments-list" style="margin-top:0.6rem"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div class="wrap"><p class="muted">© 2025 Gelukkig en Gezond.</p></div></footer>
+
+  <script src="auth.js"></script>
+  <script>
+    async function loadAppointments(){
+      const list = document.getElementById('appointments-list');
+      list.innerHTML = '<p class="muted">Laden…</p>';
+      const appts = await api('/api/appointments');
+      if (!appts || appts.error) { list.innerHTML = '<p class="muted">Kon afspraken niet laden.</p>'; return; }
+      if (!appts.length) { list.innerHTML = '<p class="muted">Geen afspraken gevonden.</p>'; return; }
+      list.innerHTML = '';
+      appts.forEach(a => {
+        const d = new Date(a.datetime);
+        const el = document.createElement('div');
+        el.className = 'card';
+        el.style.marginBottom = '0.6rem';
+        el.innerHTML = `<strong>${d.toLocaleString()}</strong> <div class="muted">${a.notes || ''}</div> <div style="margin-top:0.5rem"><button data-id="${a.id}" class="btn-red cancel-btn">Annuleren</button></div>`;
+        list.appendChild(el);
+      });
+      Array.from(document.querySelectorAll('.cancel-btn')).forEach(b=>b.addEventListener('click', async (ev)=>{
+        const id = ev.currentTarget.dataset.id;
+        await api('/api/appointments/' + id, { method: 'DELETE' });
+        loadAppointments();
+      }));
+    }
+
+    document.getElementById('appt-form').addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      const form = new FormData(ev.currentTarget);
+      const body = { datetime: form.get('datetime'), notes: form.get('notes') };
+      const resp = await api('/api/appointments', { method: 'POST', body });
+      if (resp && resp.id) { loadAppointments(); ev.currentTarget.reset(); }
+      else alert(resp.error || 'Kon afspraak niet maken');
+    });
+
+    document.addEventListener('DOMContentLoaded', ()=>{ loadAppointments(); });
+  </script>
+</body>
+</html>
