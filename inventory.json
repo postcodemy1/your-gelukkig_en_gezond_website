@@ -1,19 +1,19 @@
 [
   {
+    "id": "bb36b475-4ef5-41ec-a0cc-63345fcd592e",
+    "name": "vanille geurkaars",
+    "description": "dit is een vanille geurkaars",
+    "category": "Algemeen",
+    "price": "19.99",
+    "img": ""
+  },
+  {
     "id": "initial-1",
     "name": "Warme Deken",
     "description": "Een warme deken voor comfort en rust.",
     "category": "Warme deken",
     "price": "29.99",
     "img": "/pictures/warme-deken.jpg"
-  },
-  {
-    "id": "initial-2",
-    "name": "Relaxatiekaars",
-    "description": "Kalmerende geurkaars om te ontspannen.",
-    "category": "Kaars",
-    "price": "14.99",
-    "img": "/pictures/relaxatiekaars.jpg"
   },
   {
     "id": "initial-3",

@@ -264,12 +264,12 @@ async function getUserFromAuth(req) {
 // Ensure files exist with defaults
 (async function ensureFiles(){
   const defaultInventory = [
-    { id: randomUUID(), name: 'Warme Deken', price: '29.99', img: '/images/warme-deken.svg' },
-    { id: randomUUID(), name: 'Relaxatiekaars', price: '14.99', img: '/images/relaxatiekaars.svg' },
-    { id: randomUUID(), name: 'Comfortkussen', price: '39.99', img: '/images/comfortkussen.svg' },
-    { id: randomUUID(), name: 'Vochtige Doekjes', price: '6.99', img: '/images/vochtige-doekjes.svg' },
-    { id: randomUUID(), name: 'Soepele Sokken', price: '9.99', img: '/images/soepele-sokken.svg' },
-    { id: randomUUID(), name: 'Massageolie', price: '19.99', img: '/images/massageolie.svg' }
+    { id: randomUUID(), name: 'Warme Deken', price: '29.99', img: '/images/warme-deken.svg', stock: Math.floor(Math.random()*4)+1 },
+    { id: randomUUID(), name: 'Relaxatiekaars', price: '14.99', img: '/images/relaxatiekaars.svg', stock: Math.floor(Math.random()*4)+1 },
+    { id: randomUUID(), name: 'Comfortkussen', price: '39.99', img: '/images/comfortkussen.svg', stock: Math.floor(Math.random()*4)+1 },
+    { id: randomUUID(), name: 'Vochtige Doekjes', price: '6.99', img: '/images/vochtige-doekjes.svg', stock: Math.floor(Math.random()*4)+1 },
+    { id: randomUUID(), name: 'Soepele Sokken', price: '9.99', img: '/images/soepele-sokken.svg', stock: Math.floor(Math.random()*4)+1 },
+    { id: randomUUID(), name: 'Massageolie', price: '19.99', img: '/images/massageolie.svg', stock: Math.floor(Math.random()*4)+1 }
   ];
 
   const inv = await readJson(INVENTORY_FILE, null);
@@ -332,7 +332,8 @@ app.post('/api/inventory', async (req, res) => {
     description: body.description || '',
     category: body.category || 'Algemeen',
     price: (body.price || '0.00').toString(),
-    img: body.img || (body.imgFilename ? '/uploads/' + body.imgFilename : '')
+    img: body.img || (body.imgFilename ? '/uploads/' + body.imgFilename : ''),
+    stock: (typeof body.stock !== 'undefined' && !isNaN(Number(body.stock))) ? Number(body.stock) : (Math.floor(Math.random()*4)+1)
   };
   inv.unshift(item);
   await writeJson(INVENTORY_FILE, inv);
@@ -380,26 +381,61 @@ app.get('/api/cart', async (req, res) => {
 
 app.post('/api/cart', async (req, res) => {
   const payload = req.body || {};
+  const qty = Math.max(1, parseInt(payload.qty || 1, 10));
+
+  // verify product exists and enough stock
+  const inv = await readJson(INVENTORY_FILE, []);
+  const prod = inv.find(i => i.id === payload.id);
+  if (!prod) return res.status(404).json({ error: 'Product niet gevonden' });
+  prod.stock = typeof prod.stock === 'number' ? prod.stock : 0;
+  if (prod.stock < qty) return res.status(400).json({ error: 'Niet genoeg voorraad' });
+
+  // decrement inventory
+  prod.stock = prod.stock - qty;
+  await writeJson(INVENTORY_FILE, inv);
+
   const cart = await readJson(CART_FILE, { items: [] });
   const existing = cart.items.find(it => it.id === payload.id);
   if (existing) {
-    existing.qty = (existing.qty || 1) + (payload.qty || 1);
+    existing.qty = (existing.qty || 1) + qty;
   } else {
-    cart.items.push({ id: payload.id, name: payload.name, price: payload.price, qty: payload.qty || 1, img: payload.img || '' });
+    cart.items.push({ id: payload.id, name: payload.name, price: payload.price, qty: qty, img: payload.img || '' });
   }
   await writeJson(CART_FILE, cart);
-  res.json(cart);
+  // return both cart and updated product stock so client can refresh UI easily
+  res.json({ cart, product: { id: prod.id, stock: prod.stock } });
 });
 
 app.delete('/api/cart/:id', async (req, res) => {
   const id = req.params.id;
   const cart = await readJson(CART_FILE, { items: [] });
-  cart.items = cart.items.filter(it => it.id !== id);
+  const item = cart.items.find(it => it.id === id);
+  if (!item) return res.status(404).json({ error: 'Item niet in winkelwagen' });
+
+  // restore stock
+  const inv = await readJson(INVENTORY_FILE, []);
+  const prod = inv.find(i => i.id === id);
+  if (prod) {
+    prod.stock = (typeof prod.stock === 'number' ? prod.stock : 0) + (item.qty || 1);
+    await writeJson(INVENTORY_FILE, inv);
+  }
+
+  // remove from cart
+  const newItems = cart.items.filter(it => it.id !== id);
+  cart.items = newItems;
   await writeJson(CART_FILE, cart);
   res.json(cart);
 });
 
 app.delete('/api/cart', async (req, res) => {
+  const cart = await readJson(CART_FILE, { items: [] });
+  const inv = await readJson(INVENTORY_FILE, []);
+  // restore stocks
+  cart.items.forEach(it => {
+    const p = inv.find(x => x.id === it.id);
+    if (p) p.stock = (typeof p.stock === 'number' ? p.stock : 0) + (it.qty || 1);
+  });
+  await writeJson(INVENTORY_FILE, inv);
   await writeJson(CART_FILE, { items: [] });
   res.json({ items: [] });
 });

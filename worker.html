@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Werkruimte — Gelukkig en Gezond</title>
     <link rel="stylesheet" href="landing.css" />
+    <link rel="icon" href="logo-gezond-en-gelukkig.jpg" />
   </head>
   <body class="industrial" data-disable-theme="true">
     <header class="site-header">
@@ -40,6 +41,10 @@
               <label>Beschrijving</label>
               <input name="description">
             </div>
+            <div>
+              <label>Voorraad (optioneel)</label>
+              <input name="stock" type="number" min="0" placeholder="3">
+            </div>
             <div style="grid-column:1 / -1;display:flex;gap:8px">
               <button class="btn-blue" type="submit">Toevoegen</button>
               <button id="reload-inv" class="btn-outline" type="button">Vernieuwen</button>
@@ -63,7 +68,8 @@
         if (!inv || !inv.length) { list.innerHTML = '<p class="muted">Geen producten gevonden</p>'; return; }
         inv.forEach(i => {
           const el = document.createElement('div'); el.className = 'product-card';
-          el.innerHTML = `<img class="product-img" src="${i.img || '/images/warme-deken.svg'}"><h3>${i.name}</h3><p class="muted">€${i.price}</p><div style="margin-top:auto"><button data-id="${i.id}" class="remove-inv-btn remove-btn">Verwijder</button></div>`;
+          const stock = typeof i.stock === 'number' ? i.stock : 0;
+          el.innerHTML = `<img class="product-img" src="${i.img || '/images/warme-deken.svg'}"><h3>${i.name}</h3><p class="muted">€${i.price}</p><div style="font-size:0.95rem;color:var(--muted);">Voorraad: <strong>${stock}</strong></div><div style="margin-top:auto"><button data-id="${i.id}" class="remove-inv-btn remove-btn">Verwijder</button></div>`;
           list.appendChild(el);
         });
         Array.from(document.querySelectorAll('.remove-inv-btn')).forEach(b => b.addEventListener('click', async (ev)=>{
@@ -72,7 +78,9 @@
       }
 
       document.getElementById('add-product-form').addEventListener('submit', async (ev)=>{
-        ev.preventDefault(); const f = new FormData(ev.currentTarget); const body = { name:f.get('name'), price:f.get('price'), description:f.get('description') };
+        ev.preventDefault(); const f = new FormData(ev.currentTarget);
+        const body = { name:f.get('name'), price:f.get('price'), description:f.get('description') };
+        const stockVal = f.get('stock'); if (stockVal !== null && String(stockVal).trim() !== '') body.stock = Number(stockVal);
         const resp = await api('/api/inventory', { method: 'POST', body });
         if (resp && resp.id) { ev.currentTarget.reset(); loadInventory(); } else alert(resp.error || 'Kon product niet toevoegen');
       });

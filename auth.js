@@ -55,9 +55,25 @@ function setSessionIndicator() {
       const token = localStorage.getItem('authToken');
       if (!token) {
         hideGlobalLoadingOverlay();
-        el.innerHTML = `<a href="login.html" id="login-link">Inloggen / Registreren</a>`;
         document.body.classList.remove('client', 'industrial');
         const q = document.getElementById('quick-links'); if (q) q.remove();
+        // expose current session to pages
+        window.CURRENT_USER = null;
+        try { window.dispatchEvent(new CustomEvent('session:changed', { detail: null })); } catch(e) {}
+
+        // render user icon with login option in dropdown
+        el.innerHTML = `<div class="user-menu"><button id="user-btn" class="user-icon" aria-haspopup="true" aria-expanded="false" title="Account">` +
+          `<img src="images/user.png" alt="Account" class="user-img" width="18" height="18" />` +
+          `</button>` +
+          `<div id="user-dropdown" class="user-dropdown"><a href="login.html" id="user-login">Inloggen / Registreren</a></div></div>`;
+
+        // wire up dropdown
+        const btn = document.getElementById('user-btn'); const dd = document.getElementById('user-dropdown');
+        btn.addEventListener('click', (ev)=>{ ev.preventDefault(); const show = dd.classList.toggle('show'); btn.setAttribute('aria-expanded', String(show)); });
+        if (!window._userMenuHandlerInstalled) {
+          document.addEventListener('click', (ev)=>{ if (!ev.target.closest || !ev.target.closest('.user-menu')) { document.querySelectorAll('.user-dropdown').forEach(d=>d.classList.remove('show')); document.querySelectorAll('.user-icon').forEach(b=>{ try{b.setAttribute('aria-expanded','false')}catch(e){} }); } });
+          window._userMenuHandlerInstalled = true;
+        }
         return;
       }
       const API_BASE = window.API_BASE || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:3000' : '');
@@ -71,14 +87,16 @@ function setSessionIndicator() {
         // Special handling for not-logged-in: send user back to the site home/menu
         if (res.status === 401) {
           try { localStorage.removeItem('authToken'); } catch(e) {}
+          // clear current user and notify pages
+          window.CURRENT_USER = null; try { window.dispatchEvent(new CustomEvent('session:changed', { detail: null })); } catch(e) {}
           // If already on the login page, just show the normal login UI; otherwise redirect to home
           if (!/login\.html$/.test(location.pathname)) {
             // navigate to home menu before showing the login screen
             window.location.replace('index.html');
             return;
           }
-          // if on login page, simply restore login link and return
-          el.innerHTML = `<a href="login.html" id="login-link">Inloggen / Registreren</a>`;
+          // if on login page, no visible header login link is shown here
+          el.innerHTML = ``;
           document.body.classList.remove('client', 'industrial');
           const q = document.getElementById('quick-links'); if (q) q.remove();
           return;
@@ -94,11 +112,29 @@ function setSessionIndicator() {
       }
 
       hideGlobalLoadingOverlay();
-      // logged in
-      el.innerHTML = `Ingelogd als <strong>${escapeHtml(data.name)}</strong>` +
-        ` <button id="logout-btn" style="margin-left:0.6rem; padding:0.3rem 0.6rem; border-radius:8px;">Uitloggen</button>`;
-      const btn = document.getElementById('logout-btn');
-      btn.addEventListener('click', async () => { await api('/api/logout', { method: 'POST' }); localStorage.removeItem('authToken'); setSessionIndicator(); window.location.href = 'login.html'; });
+      // logged in — render user icon with dropdown actions
+      el.innerHTML = `<div class="user-menu"><button id="user-btn" class="user-icon" aria-haspopup="true" aria-expanded="false" title="Account">` +
+        `<img src="images/user.png" alt="Account" class="user-img" width="18" height="18" />` +
+        `</button>` +
+        `<div id="user-dropdown" class="user-dropdown"><div>Ingelogd als <strong>${escapeHtml(data.name)}</strong></div>` +
+        `${data.role === 'admin' ? '<a href="admin.html">Adminpaneel</a>' : ''}` +
+        `${data.role === 'worker' ? '<a href="worker.html">Werkruimte</a>' : ''}` +
+        `<a href="#" id="user-logout">Uitloggen</a></div></div>`;
+
+      // expose session to other pages
+      window.CURRENT_USER = data;
+      try { window.dispatchEvent(new CustomEvent('session:changed', { detail: data })); } catch(e) {}
+
+      // wire up dropdown and logout
+      const btn2 = document.getElementById('user-btn'); const dd2 = document.getElementById('user-dropdown');
+      btn2.addEventListener('click', (ev)=>{ ev.preventDefault(); const show = dd2.classList.toggle('show'); btn2.setAttribute('aria-expanded', String(show)); });
+      if (!window._userMenuHandlerInstalled) {
+        document.addEventListener('click', (ev)=>{ if (!ev.target.closest || !ev.target.closest('.user-menu')) { document.querySelectorAll('.user-dropdown').forEach(d=>d.classList.remove('show')); document.querySelectorAll('.user-icon').forEach(b=>{ try{b.setAttribute('aria-expanded','false')}catch(e){} }); } });
+        window._userMenuHandlerInstalled = true;
+      }
+      const logoutEl = document.getElementById('user-logout');
+      if (logoutEl) logoutEl.addEventListener('click', async (ev)=>{ ev.preventDefault(); await api('/api/logout', { method: 'POST' }); localStorage.removeItem('authToken'); setSessionIndicator(); window.location.href = 'index.html'; });
+
       // add role-specific links and theme
       document.body.classList.remove('client', 'industrial');
       if (data.role === 'admin' || data.role === 'worker') {
@@ -291,6 +327,15 @@ function applyTheme(theme) {
 }
 
 function initTheme() {
+  // If page forces a theme, respect it and persist
+  const forced = document.body && document.body.getAttribute('data-force-theme');
+  if (forced === 'dark' || forced === 'light') {
+    applyTheme(forced);
+    localStorage.setItem('theme', forced);
+    // hide theme toggle if present
+    const tbtn = document.getElementById('theme-toggle'); if (tbtn) tbtn.style.display = 'none';
+    return;
+  }
   // If page opts out of theme toggling, force light mode and persist
   if (document.body && document.body.getAttribute('data-disable-theme') === 'true') {
     applyTheme('light');

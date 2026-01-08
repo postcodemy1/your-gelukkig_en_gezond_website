@@ -266,7 +266,21 @@ color: var(--green);
 .session-indicator {
 font-size: 0.9rem;
 color: var(--muted);
-} 
+}
+
+/* User account icon & dropdown */
+.user-menu { position: relative; display: inline-block; }
+.user-icon {
+  display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:transparent; border:1px solid var(--surface-border); cursor:pointer; color:var(--text);
+}
+.user-img { width:18px; height:18px; border-radius:4px; object-fit:cover; display:block; }
+.user-dropdown {
+  position:absolute; right:0; top:calc(100% + 8px); min-width:180px; background:var(--card); border:1px solid var(--surface-border); box-shadow:0 10px 30px rgba(0,0,0,0.08); padding:0.25rem; border-radius:8px; display:none; z-index:1200;
+}
+.user-dropdown.show { display:block; }
+.user-dropdown a, .user-dropdown div { display:block; padding:0.5rem 0.75rem; color:var(--text); text-decoration:none; }
+.user-dropdown a:hover { background: rgba(0,0,0,0.04); }
+
 
 .centered {
   max-width: 760px;

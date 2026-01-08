@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Webshop - Gelukkig en Gezond</title>
     <link rel="stylesheet" href="landing.css">
+    <link rel="icon" href="logo-gezond-en-gelukkig.jpg" />
     <style>
         .products {
             display: grid;
@@ -233,9 +234,9 @@
 
         // Fallback initial set (used only if API unreachable)
         const fallbackProducts = [
-          {id:'p-1', name:'Warme Deken', price:'29.99', img:'/images/warme-deken.svg'},
-          {id:'p-2', name:'Relaxatiekaars', price:'14.99', img:'/images/relaxatiekaars.svg'},
-          {id:'p-3', name:'Comfortkussen', price:'39.99', img:'/images/comfortkussen.svg'}
+          {id:'p-1', name:'Warme Deken', price:'29.99', img:'/images/warme-deken.svg', stock: Math.floor(Math.random()*4)+1},
+          {id:'p-2', name:'geur kaars', price:'14.99', img:'/images/kaars.svg', stock: Math.floor(Math.random()*4)+1},
+          {id:'p-3', name:'Comfortkussen', price:'39.99', img:'/images/comfortkussen.svg', stock: Math.floor(Math.random()*4)+1}
         ];
 
         async function loadInventory(){
@@ -264,17 +265,24 @@
 
         function render(){
           listEl.innerHTML = '';
+          const canManage = window.CURRENT_USER && (window.CURRENT_USER.role === 'worker' || window.CURRENT_USER.role === 'admin');
+          // show or hide add-product controls
+          showFormBtn.style.display = canManage ? 'inline-block' : 'none';
+
           products.forEach(p => {
             const card = document.createElement('div');
             card.className = 'product-card';
             card.setAttribute('data-id', p.id);
+            const stock = typeof p.stock === 'number' ? p.stock : 0;
+            const outOfStock = stock <= 0;
             card.innerHTML = `
               <img src="${p.img||''}" alt="${p.name}" class="product-img" />
               <h4>${p.name}</h4>
               <div class="price">€${p.price}</div>
+              <div style="font-size:0.95rem;color:var(--muted);margin-top:0.5rem">Voorraad: <strong>${stock}</strong></div>
               <div style="display:flex;gap:0.5rem;margin-top:0.75rem;width:100%;">
-                <button class="add-to-cart-btn" data-id="${p.id}" style="flex:1">In winkelwagen</button>
-                <button class="nav-btn btn-outline remove-btn" data-id="${p.id}">Verwijder</button>
+                <button class="add-to-cart-btn" data-id="${p.id}" style="flex:1" ${outOfStock ? 'disabled' : ''}>${outOfStock ? 'Uitverkocht' : 'In winkelwagen'}</button>
+                ${canManage ? `<button class="nav-btn btn-outline remove-btn" data-id="${p.id}">Verwijder</button>` : ''}
               </div>
             `;
             listEl.appendChild(card);
@@ -315,11 +323,22 @@
             const p = products.find(x=>x.id===id);
             if(!p) return;
             const apiRes = await apiPost('/api/cart', { id: p.id, name: p.name, price: p.price, img: p.img, qty: 1 });
-            if(apiRes) { cart = apiRes; localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); }
-            else { // fallback local
+            if(apiRes && apiRes.error) { alert(apiRes.error); }
+            else if(apiRes && apiRes.cart) {
+              // server returned { cart, product }
+              cart = apiRes.cart;
+              // reload inventory from server to get updated stocks
+              await loadInventory();
+              localStorage.setItem('cart', JSON.stringify(cart));
+              updateCartUI(); render();
+            } else if(apiRes && apiRes.items) { // backward compat (server returning bare cart)
+              cart = apiRes; localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); await loadInventory(); render();
+            } else { // fallback local
               const existing = cart.items.find(it => it.id === p.id);
               if(existing) existing.qty += 1; else cart.items.push({id:p.id,name:p.name, price:p.price, qty:1, img:p.img});
-              localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI();
+              // decrement local cached stock if available
+              const prod = products.find(x=>x.id===p.id); if(prod && typeof prod.stock === 'number') prod.stock = Math.max(0, prod.stock - 1);
+              localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); render();
             }
           }));
         }
@@ -331,11 +350,16 @@
           document.getElementById('detail-desc').textContent = p.description || '';
           document.getElementById('detail-category').textContent = p.category ? 'Categorie: ' + p.category : '';
           document.getElementById('detail-price').textContent = '€' + p.price;
+          const stock = typeof p.stock === 'number' ? p.stock : 0;
+          document.getElementById('detail-add-cart').disabled = stock <= 0;
+          document.getElementById('detail-add-cart').textContent = stock <= 0 ? 'Uitverkocht' : 'Voeg toe aan winkelwagen';
           modal.style.display = 'flex';
 
           document.getElementById('detail-add-cart').onclick = async ()=>{
             const res = await apiPost('/api/cart', { id: p.id, name: p.name, price: p.price, img: p.img, qty:1 });
-            if(res) { cart = res; localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); alert('Toegevoegd aan winkelwagen'); modal.style.display='none'; }
+            if(res && res.error) { alert(res.error); }
+            else if(res && res.cart) { cart = res.cart; await loadInventory(); localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); alert('Toegevoegd aan winkelwagen'); modal.style.display='none'; }
+            else if(res && res.items) { cart = res; localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); alert('Toegevoegd aan winkelwagen'); modal.style.display='none'; }
             else { const existing = cart.items.find(it=>it.id===p.id); if(existing) existing.qty++; else cart.items.push({id:p.id,name:p.name,price:p.price,qty:1,img:p.img}); localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); alert('Toegevoegd aan winkelwagen (offline)'); modal.style.display='none'; }
           };
         }
@@ -358,14 +382,14 @@
           document.querySelectorAll('.cart-remove').forEach(btn=>btn.addEventListener('click', async e=>{
             const id = e.currentTarget.dataset.id;
             const apiRes = await apiDelete('/api/cart/'+id);
-            if(apiRes) { cart = apiRes; localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); }
+            if(apiRes) { cart = apiRes; localStorage.setItem('cart', JSON.stringify(cart)); await loadInventory(); render(); updateCartUI(); }
             else { cart.items = cart.items.filter(it=>it.id!==id); localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); }
           }));
         }
 
         cartBtn.addEventListener('click', ()=>{ cartModal.style.display = cartModal.style.display === 'none' ? 'block' : 'none'; });
-        emptyCartBtn.addEventListener('click', async ()=>{ const res = await apiDelete('/api/cart'); cart = res || {items:[]}; localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); });
-        checkoutBtn.addEventListener('click', async ()=>{ alert('Checkout demo — bestelling geplaatst!'); const res = await apiDelete('/api/cart'); cart = res || {items:[]}; localStorage.setItem('cart', JSON.stringify(cart)); updateCartUI(); cartModal.style.display='none'; });
+        emptyCartBtn.addEventListener('click', async ()=>{ const res = await apiDelete('/api/cart'); cart = res || {items:[]}; localStorage.setItem('cart', JSON.stringify(cart)); await loadInventory(); render(); updateCartUI(); });
+        checkoutBtn.addEventListener('click', async ()=>{ alert('Checkout demo — bestelling geplaatst!'); const res = await apiDelete('/api/cart'); cart = res || {items:[]}; localStorage.setItem('cart', JSON.stringify(cart)); await loadInventory(); render(); updateCartUI(); cartModal.style.display='none'; });
 
         // Add product modal handlers
         const addProductModal = document.getElementById('add-product-modal');
@@ -384,6 +408,9 @@
         uploadImage.addEventListener('change', ()=>{ previewDiv.innerHTML=''; const f = uploadImage.files && uploadImage.files[0]; if(!f) return; const img = document.createElement('img'); img.src = URL.createObjectURL(f); img.style.maxWidth='160px'; img.style.borderRadius='8px'; previewDiv.appendChild(img); });
 
         addProductBtn.addEventListener('click', async ()=>{
+          const canManage = window.CURRENT_USER && (window.CURRENT_USER.role === 'worker' || window.CURRENT_USER.role === 'admin');
+          if (!canManage) { alert('Alleen medewerkers mogen producten toevoegen.'); return; }
+
           const name = document.getElementById('product-name').value.trim();
           const price = parseFloat(document.getElementById('product-price').value);
           const desc = document.getElementById('product-desc').value.trim();
@@ -401,12 +428,15 @@
           } else if(serverImages.value){ imagePath = serverImages.value; }
 
           const apiRes = await apiPost('/api/inventory', { name, description: desc, category: cat, price: price.toFixed(2), img: imagePath });
-          if(apiRes){ products.unshift(apiRes); localStorage.setItem('inventory', JSON.stringify(products)); addProductModal.style.display='none'; document.getElementById('product-name').value=''; document.getElementById('product-price').value=''; document.getElementById('product-desc').value=''; document.getElementById('product-cat').value='Algemeen'; previewDiv.innerHTML=''; serverImages.value=''; uploadImage.value=''; render(); }
-          else { const newp = { id:'p-'+Date.now(), name, description:desc, category:cat, price:price.toFixed(2), img:'/uploads/product-placeholder.png' }; products.unshift(newp); localStorage.setItem('inventory', JSON.stringify(products)); addProductModal.style.display='none'; render(); }
+          if(apiRes && apiRes.id){ products.unshift(apiRes); localStorage.setItem('inventory', JSON.stringify(products)); addProductModal.style.display='none'; document.getElementById('product-name').value=''; document.getElementById('product-price').value=''; document.getElementById('product-desc').value=''; document.getElementById('product-cat').value='Algemeen'; previewDiv.innerHTML=''; serverImages.value=''; uploadImage.value=''; render(); }
+          else { const newp = { id:'p-'+Date.now(), name, description:desc, category:cat, price:price.toFixed(2), img:'/uploads/product-placeholder.png', stock: Math.floor(Math.random()*4)+1 }; products.unshift(newp); localStorage.setItem('inventory', JSON.stringify(products)); addProductModal.style.display='none'; render(); }
         });
 
         // detail modal handlers
         document.getElementById('detail-close').addEventListener('click', ()=>{ document.getElementById('product-detail-modal').style.display='none'; });
+
+        // re-render when session changes (so add/remove buttons and management controls update)
+        window.addEventListener('session:changed', () => { render(); });
 
         // init
         (async function init(){ await loadInventory(); await loadCart(); await loadPictures(); render(); })();

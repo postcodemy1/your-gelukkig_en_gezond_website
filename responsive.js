@@ -44,6 +44,24 @@
     // Remove the enter class to play the load animation
     window.requestAnimationFrame(() => setTimeout(() => document.body.classList.remove('page-enter'), 20));
 
+    // If a page forces a theme (data-force-theme), apply and skip injection
+    const forcedTheme = document.body && document.body.getAttribute('data-force-theme');
+    if (forcedTheme === 'dark' || forcedTheme === 'light') {
+      const name = forcedTheme;
+      document.documentElement.classList.toggle('dark', name === 'dark');
+      localStorage.setItem('theme', name);
+      if (name === 'dark') {
+        document.body.classList.remove('industrial-light');
+        document.body.classList.add('industrial-dark');
+      } else {
+        document.body.classList.remove('industrial-dark');
+        document.body.classList.add('industrial-light');
+      }
+      // hide existing theme toggle if present
+      const existing = document.getElementById('theme-toggle'); if (existing) existing.style.display = 'none';
+      return;
+    }
+
     // If a page opts out of theme toggling (data-disable-theme="true"), enforce light mode and skip injection
     if (document.body && document.body.getAttribute('data-disable-theme') === 'true') {
       // ensure global dark class is removed and industrial pages use light vars
