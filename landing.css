@@ -29,7 +29,29 @@
 
   --max: 900px;
   --text: #111;
+
+  /* animation durations */
+  --theme-transition-duration: 300ms; /* theme switch duration (200-400ms recommended) */
+  --page-transition-duration: 340ms;  /* page enter/exit duration */
 }
+
+/* Smooth transitions for theme-sensitive properties */
+html, body {
+  transition: background-color var(--theme-transition-duration) ease, color var(--theme-transition-duration) ease, border-color var(--theme-transition-duration) ease;
+}
+.card, .auth-card, .feature-card, .product-card, .site-header, .site-footer, .nav-btn, button, input, .theme-toggle {
+  transition: background-color var(--theme-transition-duration) ease, color var(--theme-transition-duration) ease, box-shadow var(--theme-transition-duration) ease, border-color var(--theme-transition-duration) ease;
+}
+
+/* Page enter/exit helper classes */
+body.page-enter { opacity: 0; transform: translateY(6px); transition: opacity var(--page-transition-duration) ease, transform var(--page-transition-duration) ease; }
+body.page-exit { opacity: 0; transform: translateY(-6px); transition: opacity var(--page-transition-duration) ease, transform var(--page-transition-duration) ease; }
+
+/* temporary class applied during theme transitions (in case some elements want stronger animation) */
+html.theme-transition * {
+  transition-timing-function: cubic-bezier(.2,.9,.2,1);
+}
+
 
 
 * {
@@ -67,7 +89,7 @@ html.high-dpi body { -webkit-font-smoothing: antialiased; }
 /* Headings use a friendly serif for a calm, trusted tone */
 h1, h2, h3 {
   font-family: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
-  color: #0e1720;
+  color: var(--text);
 }
 
 /* Hero layout */
@@ -160,7 +182,7 @@ padding: 0 1rem;
 
 .site-header {
 background: linear-gradient(120deg, var(--blue-08), transparent);
-border-bottom: 1px solid rgba(0,0,0,0.05);
+border-bottom: 1px solid var(--surface-border);
 } 
 
 .site-header .wrap {
@@ -354,7 +376,7 @@ margin-top: 0.9rem;
 padding: 2rem 0;
 color: var(--muted);
 font-size: 0.9rem;
-border-top: 1px solid rgba(0,0,0,0.03);
+border-top: 1px solid var(--surface-border);
 margin-top: 2rem;
 }
 
@@ -459,7 +481,7 @@ body.industrial {
   color: var(--text);
 }
 body.industrial .site-header { background: linear-gradient(120deg, rgba(14,17,20,0.6), rgba(0,0,0,0.6)); border-bottom-color: rgba(255,255,255,0.03); }
-body.industrial .brand { color: #e6edf3; }
+body.industrial .brand { color: var(--text); }
 body.industrial .top-nav a { color: var(--text); }
 body.industrial .card, body.industrial .auth-card, body.industrial .feature-card, body.industrial .product-card { background: #0b1220; border: 1px solid rgba(255,255,255,0.03); box-shadow: none; }
 
@@ -520,7 +542,7 @@ body.industrial.industrial-light {
   color: var(--text);
 }
 
-body.industrial .nav-btn, body.industrial button { background: #22272e; color: #e6edf3; border-radius: 6px; }
+body.industrial .nav-btn, body.industrial button { background: #22272e; color: var(--text); border-radius: 6px; }
 body.industrial .hero-logo { box-shadow: none; border-radius: 6px; padding: 1rem; background: linear-gradient(90deg,#0b1220,#0f1720); }
 
 /* Admin 'Topdesk-like' small layout */
@@ -593,7 +615,7 @@ body.dark-theme .glass { background: var(--login-glass-dark); color: var(--login
 /* Theme toggle (moon -> sun) */
 .theme-toggle { position:absolute; top:10px; right:12px; width:48px; height:40px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); cursor:pointer; z-index:8; backdrop-filter: blur(6px); transition: transform 200ms ease, box-shadow 200ms ease; }
 .theme-toggle:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
-.theme-toggle svg { width:22px; height:22px; transition: transform 300ms ease, opacity 300ms ease; color:var(--white); }
+.theme-toggle svg { width:22px; height:22px; transition: transform 300ms ease, opacity 300ms ease; color:var(--text); }
 .theme-toggle .sun { transform: scale(0); opacity:0; }
 body.light-theme .theme-toggle .sun { transform: scale(1); opacity:1; }
 body.light-theme .theme-toggle .moon { transform: scale(0); opacity:0; }

@@ -35,10 +35,24 @@
   document.addEventListener('DOMContentLoaded', apply);
 
   // run now
+  // Add page-enter class for the initial load animation then run layout apply
+  document.body.classList.add('page-enter');
   apply();
 
   // Theme toggle injected into .top-nav; persists in localStorage
   document.addEventListener('DOMContentLoaded', () => {
+    // Remove the enter class to play the load animation
+    window.requestAnimationFrame(() => setTimeout(() => document.body.classList.remove('page-enter'), 20));
+
+    // If a page opts out of theme toggling (data-disable-theme="true"), enforce light mode and skip injection
+    if (document.body && document.body.getAttribute('data-disable-theme') === 'true') {
+      // ensure global dark class is removed and industrial pages use light vars
+      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('industrial-dark');
+      document.body.classList.add('industrial-light');
+      localStorage.setItem('theme','light');
+      return;
+    }
     const nav = document.querySelector('.top-nav');
     if (!nav) return;
     if (document.getElementById('theme-toggle')) return; // already injected
@@ -68,6 +82,28 @@
     btn.addEventListener('click', () => setTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark'));
 
     nav.appendChild(btn);
+
+    // Intercept internal navigation to play a subtle exit animation before navigating
+    document.addEventListener('click', (ev) => {
+      const a = ev.target.closest && ev.target.closest('a');
+      if (!a) return;
+      if (a.target === '_blank') return; // let new tab/open external links
+      const href = a.getAttribute('href') || '';
+      if (!href || href.startsWith('javascript:') || href.startsWith('#')) return;
+      // only handle same-origin or relative links
+      try {
+        const url = new URL(href, location.href);
+        if (url.origin !== location.origin) return;
+      } catch (e) { return; }
+
+      // allow opt-out via attribute
+      if (a.hasAttribute('data-no-page-transition')) return;
+
+      ev.preventDefault();
+      document.body.classList.add('page-exit');
+      // wait for the exit animation then navigate
+      setTimeout(() => { location.href = href; }, parseInt(getComputedStyle(document.documentElement).getPropertyValue('--page-transition-duration')) || 340);
+    });
   });
 
 })();

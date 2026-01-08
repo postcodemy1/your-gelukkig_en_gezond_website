@@ -113,9 +113,9 @@ function setSessionIndicator() {
         a.id = 'quick-links';
         a.style.marginTop = '0.5rem';
         let inner = '';
-        if (data.role === 'admin') inner += `<a class="nav-btn" href="ruang-admin/index.html">Adminpaneel</a> `;
+        if (data.role === 'admin') inner += `<a class="nav-btn" href="admin.html">Adminpaneel</a> `;
         if (data.role === 'worker') inner += `<a class="nav-btn" href="worker.html">Werkruimte</a> `;
-        if (data.role === 'client') inner += `<a class="nav-btn" href="appointments.html">Mijn afspraken</a> <a class="nav-btn" href="webshop.html">Webshop</a> `;
+        // client quick links removed per request (previously: Mijn afspraken / Webshop)
         a.innerHTML = inner;
         wrap.insertBefore(a, wrap.firstChild);
       }
@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.setItem('authToken', resp.token);
         if (submit) { submit.disabled = false; submit.textContent = oldText; }
         // redirect based on role
-        if (resp.user && resp.user.role === 'admin') window.location.href = 'ruang-admin/index.html';
+        if (resp.user && resp.user.role === 'admin') window.location.href = 'admin.html';
         else if (resp.user && resp.user.role === 'worker') window.location.href = 'worker.html';
         else window.location.href = 'index.html';
       } else {
@@ -278,13 +278,25 @@ async function performHandshake() {
 
 // Theme handling (light/dark) — persists in localStorage
 function applyTheme(theme) {
+  // add a transient class to enable smooth transition
+  document.documentElement.classList.add('theme-transition');
+  const transitionMs = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--theme-transition-duration')) || 300;
+  // ensure theme classes and variables apply
   document.body.classList.remove('light-theme','dark-theme');
   document.body.classList.add(theme + '-theme');
   localStorage.setItem('theme', theme);
   const btn = document.getElementById('theme-toggle'); if (btn) btn.setAttribute('aria-pressed', theme === 'light');
+  // remove the helper class after transition completes
+  setTimeout(() => document.documentElement.classList.remove('theme-transition'), transitionMs + 40);
 }
 
 function initTheme() {
+  // If page opts out of theme toggling, force light mode and persist
+  if (document.body && document.body.getAttribute('data-disable-theme') === 'true') {
+    applyTheme('light');
+    localStorage.setItem('theme','light');
+    return;
+  }
   const stored = localStorage.getItem('theme');
   if (stored) { applyTheme(stored); return; }
   // prefer system if not set
@@ -295,7 +307,7 @@ function initTheme() {
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   const tbtn = document.getElementById('theme-toggle');
-  if (tbtn) {
+  if (tbtn && document.body.getAttribute('data-disable-theme') !== 'true') {
     tbtn.addEventListener('click', (ev) => {
       const isLight = document.body.classList.contains('light-theme');
       applyTheme(isLight ? 'dark' : 'light');
