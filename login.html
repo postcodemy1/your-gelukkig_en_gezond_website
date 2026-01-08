@@ -17,6 +17,7 @@
           <svg class="sun" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6.76 4.84l-1.8-1.79L3.17 4.84l1.79 1.79 1.8-1.79zM1 13h3v-2H1v2zm10-9h2V1h-2v3zM6.76 19.16l1.8 1.79 1.79-1.79-1.8-1.79-1.79 1.79zM17.24 4.84l1.79-1.79 1.79 1.79-1.79 1.79-1.79-1.79zM20 11v2h3v-2h-3zM11 20h2v3h-2v-3zM17.24 19.16l1.79 1.79 1.8-1.79-1.79-1.79-1.8 1.79zM12 6a6 6 0 100 12 6 6 0 000-12z" fill="currentColor"/></svg>
         </button>
         <div class="brand-small"><img src="logo-gezond-en-gelukkig.jpg" alt="logo" class="site-logo">Gelukkig en Gezond</div>
+        <div style="text-align:left;margin-bottom:0.5rem"><a href="#" id="back-to-home" class="muted" style="text-decoration:none">← Terug naar menu</a></div>
         <h1 id="login-title">Inloggen</h1>
         <p class="muted">Log in om afspraken en bestellingen te beheren.</p>
 
@@ -61,6 +62,19 @@
     <script src="auth.js"></script>
     <script>
       // UI interactions
+      (function(){
+        const back = document.getElementById('back-to-home');
+        if (back) back.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          try {
+            if (document.referrer) {
+              const ref = new URL(document.referrer);
+              if (ref.origin === location.origin) { history.back(); return; }
+            }
+          } catch(e) {}
+          window.location.href = 'index.html';
+        });
+      })();
       document.getElementById('show-register').addEventListener('click', ()=>{
         document.getElementById('register-form').style.display = 'block';
         document.querySelector('.login-form').style.display = 'none';

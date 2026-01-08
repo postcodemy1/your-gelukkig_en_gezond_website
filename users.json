@@ -19,5 +19,12 @@
     "email": "test@test.com",
     "passwordHash": "$2b$10$EmOqieyl.1MTB1NjmB44ROqLVgZLy1EafkdKmqRM7L/5PMwGhsDnS",
     "role": "client"
+  },
+  {
+    "id": "51ed1ac4-64f5-42cc-a360-76d57c7f0842",
+    "name": "server",
+    "email": "server@server.com",
+    "passwordHash": "$2b$10$e5hyZEqtUd0iOdxokBnJlO0LPqVE5mOdVdDHioYx8jdmNdxSrmU02",
+    "role": "client"
   }
 ]

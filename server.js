@@ -3,9 +3,14 @@
 
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const fs = require('fs').promises;
 const path = require('path');
-const { randomUUID } = require('crypto');
+const { randomUUID, createHmac, randomBytes, createCipheriv } = require('crypto');
+const http = require('http');
+const https = require('https');
+const os = require('os');
+const dns = require('dns');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
 
@@ -19,15 +24,48 @@ const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 const APPOINTMENTS_FILE = path.join(DATA_DIR, 'appointments.json');
 
 const app = express();
-app.use(cors());
+// Dynamic CORS that allows configured origins and any localhost/127.0.0.1 origins (useful for dev on different ports)
+const configuredOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
+const corsOptions = {
+  origin: function(origin, cb) {
+    // Allow non-browser requests (curl, server-side)
+    if (!origin) return cb(null, true);
+    if (configuredOrigins.length && configuredOrigins.includes(origin)) return cb(null, true);
+    try {
+      const m = origin.match(/^https?:\/\/([^:/]+)(:\d+)?$/);
+      if (m) {
+        const host = m[1];
+        if (host === 'localhost' || host === '127.0.0.1') return cb(null, true);
+      }
+    } catch (e) {
+      // fallthrough to reject
+    }
+    console.warn('[CORS] blocked origin', origin);
+    return cb(new Error('Not allowed by CORS'));
+  },
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+app.use(helmet());
 app.use(express.json());
-// Log incoming requests (helps debug 405s)
+
+// Make uncaught errors visible in logs so we can diagnose crashes
+process.on('uncaughtException', (err) => { console.error('[FATAL] uncaughtException', err && err.stack ? err.stack : err); });
+process.on('unhandledRejection', (reason) => { console.error('[FATAL] unhandledRejection', reason); });
+// Incoming request logger with client info and start time
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  try {
+    req._startTime = Date.now();
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    const ua = req.headers['user-agent'] || '';
+    console.log(`[IN] ${new Date().toISOString()} ${req.method} ${req.path} from=${ip} ua="${ua}" origin="${req.headers.origin||''}"`);
+  } catch (e) {
+    console.warn('[LOG] incoming logger failed', e && e.stack ? e.stack : e);
+  }
   next();
 });
 // Handle preflight explicitly
-app.options('*', cors());
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
@@ -47,12 +85,178 @@ async function writeJson(file, data) {
   await fs.writeFile(file, JSON.stringify(data, null, 2), 'utf8');
 }
 
+function sanitizeForLog(obj) {
+  try {
+    const copy = JSON.parse(JSON.stringify(obj || {}));
+    const LOG_KEY = process.env.LOG_KEY || 'dev-log-key';
+    const LOG_METHOD = (process.env.LOG_METHOD || 'aes').toLowerCase();
+    // redact common sensitive keys
+    ['password','passwordHash','token','authorization','authToken'].forEach(k => { if (k in copy) copy[k] = '[REDACTED]'; });
+    // obfuscate email/username using selected method (aes or hmac-sha1)
+    if (copy.email) {
+      try {
+        const email = String(copy.email).toLowerCase();
+        if (LOG_METHOD === 'aes' && LOG_KEY) {
+          // AES-256-GCM encryption (non-reversible without LOG_KEY)
+          const key = createHmac('sha256', LOG_KEY).digest(); // 32 bytes
+          const iv = randomBytes(12);
+          const cipher = createCipheriv('aes-256-gcm', key, iv);
+          const encrypted = Buffer.concat([cipher.update(email, 'utf8'), cipher.final()]);
+          const tag = cipher.getAuthTag();
+          copy.email = `enc:${iv.toString('hex')}:${encrypted.toString('hex')}:${tag.toString('hex')}`;
+        } else if (LOG_METHOD === 'hmac-sha1') {
+          const h = createHmac('sha1', LOG_KEY).update(email).digest('hex').slice(0,16);
+          copy.email = `h1:${h}`;
+        } else {
+          // fallback to HMAC-SHA256 short digest
+          const h = createHmac('sha256', LOG_KEY).update(email).digest('hex').slice(0,16);
+          copy.email = `h:${h}`;
+        }
+      } catch (e) {
+        copy.email = '[obfuscate-error]';
+      }
+    }
+    return copy;
+  } catch (e) {
+    return '[UNSERIALIZABLE]';
+  }
+}
+
+// Detailed sanitized request logging (verbose for debugging)
+app.use((req, res, next) => {
+  try {
+    const sbody = sanitizeForLog(req.body || {});
+    const sHeaders = { authorization: req.headers.authorization ? '[REDACTED]' : undefined };
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    console.log(`[REQ] ${new Date().toISOString()} ${req.method} ${req.path} from=${ip} headers=${JSON.stringify(sHeaders)} body=${JSON.stringify(sbody)}`);
+    // log response status and timing when request finishes
+    res.on('finish', () => {
+      const duration = (req._startTime ? (Date.now() - req._startTime) : 0);
+      console.log(`[RES] ${new Date().toISOString()} ${req.method} ${req.path} from=${ip} status=${res.statusCode} duration=${duration}ms`);
+    });
+  } catch (e) {
+    console.warn('[LOG] could not serialize request', e && e.stack ? e.stack : e);
+  }
+  next();
+});
+
+// Startup heartbeat (useful to verify server stays alive)
+setInterval(() => console.log('[HEARTBEAT] server alive', new Date().toISOString()), 60 * 1000);
+
+// Debug endpoints (disabled unless DEBUG_ALLOW=true in env)
+app.get('/debug/info', (req, res) => {
+  try {
+    const nets = os.networkInterfaces();
+    const addr = (typeof server !== 'undefined' && server && server.address) ? server.address() : null;
+    const info = { uptime: process.uptime(), pid: process.pid, node: process.version, address: addr, networks: Object.keys(nets) };
+    console.log('[DEBUG] info requested', info);
+    res.json(info);
+  } catch (e) {
+    console.error('[DEBUG] info error', e && e.stack ? e.stack : e);
+    res.status(500).json({ error: 'debug info failed' });
+  }
+});
+
+app.post('/debug/check', async (req, res) => {
+  if (!process.env.DEBUG_ALLOW) {
+    console.log('[DEBUG] check blocked - DEBUG_ALLOW not set');
+    return res.status(403).json({ error: 'debug disabled' });
+  }
+  const logs = [];
+  logs.push('[DEBUG] starting connectivity checks');
+  try {
+    logs.push('[DEBUG] dns.lookup example.com');
+    const dnsResult = await new Promise(resolve => dns.lookup('example.com', (err, address, family) => {
+      if (err) { logs.push(`[DEBUG] dns.lookup FAILED: ${err.message}`); resolve({ ok: false, error: err.message }); }
+      else { logs.push(`[DEBUG] dns.lookup OK -> ${address} (family ${family})`); resolve({ ok: true, address, family }); }
+    }));
+
+    logs.push('[DEBUG] https.get https://example.com');
+    const httpResult = await new Promise(resolve => {
+      const t = setTimeout(() => { logs.push('[DEBUG] https.get TIMEOUT'); resolve({ ok: false, error: 'timeout' }); }, 8000);
+      const r = https.get('https://example.com', (resp) => {
+        clearTimeout(t);
+        logs.push(`[DEBUG] https.get status ${resp.statusCode}`);
+        resp.on('data', () => {});
+        resp.on('end', () => { logs.push('[DEBUG] https.get end'); resolve({ ok: true, status: resp.statusCode }); });
+      });
+      r.on('error', (e) => { clearTimeout(t); logs.push(`[DEBUG] https.get error ${e.message}`); resolve({ ok: false, error: e.message }); });
+    });
+
+    logs.push('[DEBUG] checks complete');
+    console.log(logs.join('\n'));
+    return res.json({ logs, dnsResult, httpResult });
+  } catch (e) {
+    console.error('[DEBUG] check exception', e && e.stack ? e.stack : e);
+    return res.status(500).json({ error: 'debug failed', message: String(e) });
+  }
+});
+
+// Handshake packet store (temporary nonces, short-lived)
+const HANDSHAKE_STORE = new Map();
+function issueHandshakePacket() {
+  const pkt = {
+    serverVersion: process.env.SERVER_VERSION || '1.0.0',
+    serverType: process.env.SERVER_TYPE || 'dev-api',
+    serverName: process.env.SERVER_NAME || 'SimpleAPI',
+    timestamp: Date.now(),
+    nonce: randomUUID(),
+    features: ['inventory','auth','uploads']
+  };
+  HANDSHAKE_STORE.set(pkt.nonce, { packet: pkt, createdAt: Date.now() });
+  // expire after 2 minutes
+  setTimeout(() => HANDSHAKE_STORE.delete(pkt.nonce), 2 * 60 * 1000);
+  return pkt;
+}
+
+app.get('/api/handshake', (req, res) => {
+  try {
+    const pkt = issueHandshakePacket();
+    console.log('[HANDSHAKE] issued server packet', sanitizeForLog(pkt));
+    res.json(pkt);
+  } catch (e) {
+    console.error('[HANDSHAKE] issue error', e && e.stack ? e.stack : e);
+    res.status(500).json({ error: 'handshake issue failed' });
+  }
+});
+
+app.post('/api/handshake/confirm', async (req, res) => {
+  try {
+    const body = req.body || {};
+    console.log('[HANDSHAKE] confirm received', sanitizeForLog(body));
+    const nonce = body.echoNonce || body.serverNonce;
+    if (!nonce) {
+      console.warn('[HANDSHAKE] confirm missing nonce');
+      return res.status(400).json({ error: 'missing nonce' });
+    }
+    const entry = HANDSHAKE_STORE.get(nonce);
+    if (!entry) {
+      console.warn('[HANDSHAKE] confirm invalid/expired nonce', sanitizeForLog({ nonce }));
+      return res.status(400).json({ error: 'invalid or expired nonce' });
+    }
+    // Optionally validate serverVersion or other echoed fields
+    // Accept handshake and remove nonce
+    HANDSHAKE_STORE.delete(nonce);
+    console.log('[HANDSHAKE] success', { nonce, client: sanitizeForLog(body) });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('[HANDSHAKE] confirm error', e && e.stack ? e.stack : e);
+    return res.status(500).json({ error: 'handshake confirm failed' });
+  }
+});
+
 async function getUserFromAuth(req) {
   const auth = (req.headers.authorization || '').replace('Bearer ', '') || req.query.token || '';
   if (!auth) return null;
   const sessions = await readJson(SESSIONS_FILE, {});
   const s = sessions[auth];
   if (!s) return null;
+  // Expire sessions when past expiresAt to avoid long-lived tokens
+  if (s.expiresAt && s.expiresAt < Date.now()) {
+    delete sessions[auth];
+    await writeJson(SESSIONS_FILE, sessions);
+    return null;
+  }
   const users = await readJson(USERS_FILE, []);
   return users.find(u => u.id === s.userId) || null;
 }
@@ -77,7 +281,9 @@ async function getUserFromAuth(req) {
   // ensure users file exists with a default admin user
   const users = await readJson(USERS_FILE, null);
   if (!users) {
-    const adminPass = bcrypt.hashSync('admin123', 10);
+    const rawAdminPass = process.env.ADMIN_PASS || 'admin123';
+    if (!process.env.ADMIN_PASS) console.warn('Default admin password used; set ADMIN_PASS environment variable to a strong password');
+    const adminPass = bcrypt.hashSync(rawAdminPass, 10);
     await writeJson(USERS_FILE, [
       { id: randomUUID(), name: 'Administrator', email: 'admin@example.com', passwordHash: adminPass, role: 'admin' }
     ]);
@@ -143,6 +349,7 @@ const upload = multer({
       cb(null, name);
     }
   }),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     if(!/image\/(jpeg|png)/.test(file.mimetype)) return cb(new Error('Only JPEG/PNG allowed'));
     cb(null, true);
@@ -201,7 +408,7 @@ app.delete('/api/cart', async (req, res) => {
 app.post('/api/register', async (req, res) => {
   console.log('[AUTH] register request', req.method, req.path);
   const body = req.body || {};
-  console.log('[AUTH] register body', body);
+  console.log('[AUTH] register body', sanitizeForLog(body));
   const name = (body.name || '').trim();
   const email = (body.email || '').trim().toLowerCase();
   const password = body.password || '';
@@ -220,7 +427,7 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   console.log('[AUTH] login request', req.method, req.path);
   const body = req.body || {};
-  console.log('[AUTH] login body', body);
+  console.log('[AUTH] login body', sanitizeForLog(body));
   const email = (body.email || '').trim().toLowerCase();
   const password = body.password || '';
   const users = await readJson(USERS_FILE, []);
@@ -230,9 +437,11 @@ app.post('/api/login', async (req, res) => {
   }
   const sessions = await readJson(SESSIONS_FILE, {});
   const token = randomUUID();
-  sessions[token] = { userId: user.id, createdAt: Date.now() };
+  const expiresInMs = 24 * 60 * 60 * 1000; // 24 hours
+  sessions[token] = { userId: user.id, createdAt: Date.now(), expiresAt: Date.now() + expiresInMs };
   await writeJson(SESSIONS_FILE, sessions);
-  res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+  console.log('[AUTH] login success', { user: sanitizeForLog({ email: user.email }), userId: user.id, expiresAt: sessions[token].expiresAt });
+  res.json({ token, expiresIn: 24*60*60, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 });
 
 app.post('/api/logout', async (req, res) => {
@@ -246,13 +455,17 @@ app.post('/api/logout', async (req, res) => {
 
 app.get('/api/me', async (req, res) => {
   const auth = (req.headers.authorization || '').replace('Bearer ', '') || req.query.token || '';
-  if (!auth) return res.status(401).json({ error: 'Niet ingelogd' });
+  console.log('[HANDSHAKE] attempt', sanitizeForLog({ token: auth }));
+  if (!auth) { console.warn('[HANDSHAKE] failed - no token'); return res.status(401).json({ error: 'Niet ingelogd' }); }
   const sessions = await readJson(SESSIONS_FILE, {});
   const s = sessions[auth];
-  if (!s) return res.status(401).json({ error: 'Sessietoken ongeldig' });
+  if (!s) { console.warn('[HANDSHAKE] failed - invalid token', sanitizeForLog({ token: auth })); return res.status(401).json({ error: 'Sessietoken ongelijk' }); }
+  // Expire check already happens in getUserFromAuth, but double-check
+  if (s.expiresAt && s.expiresAt < Date.now()) { console.warn('[HANDSHAKE] failed - expired token', sanitizeForLog({ token: auth })); delete sessions[auth]; await writeJson(SESSIONS_FILE, sessions); return res.status(401).json({ error: 'Sessie verlopen' }); }
   const users = await readJson(USERS_FILE, []);
   const user = users.find(u => u.id === s.userId);
-  if (!user) return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+  if (!user) { console.warn('[HANDSHAKE] failed - user missing for token', sanitizeForLog({ token: auth })); return res.status(404).json({ error: 'Gebruiker niet gevonden' }); }
+  console.log('[HANDSHAKE] successful', { user: sanitizeForLog({ email: user.email }), userId: user.id, role: user.role });
   res.json({ id: user.id, name: user.name, email: user.email, role: user.role });
 });
 
@@ -318,4 +531,18 @@ app.get('/api/users', async (req, res) => {
 // --- end user endpoints ---
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Dev API server running on http://localhost:${port}`));
+const server = http.createServer(app);
+server.on('connection', (socket) => {
+  try {
+    console.log(`[CONN] ${new Date().toISOString()} connection from ${socket.remoteAddress}:${socket.remotePort} family=${socket.remoteFamily}`);
+  } catch (e) { console.warn('[CONN] connection log failed', e && e.stack ? e.stack : e); }
+});
+server.on('listening', () => {
+  try {
+    const addr = server.address();
+    console.log(`[SERVER] listening on ${addr.address}:${addr.port} family=${addr.family}`);
+    console.log(`[SERVER] pid=${process.pid} node=${process.version}`);
+  } catch (e) { console.warn('[SERVER] listening handler failed', e && e.stack ? e.stack : e); }
+});
+server.on('error', (err) => { console.error('[SERVER] error', err && err.stack ? err.stack : err); });
+server.listen(port, () => console.log(`Dev API server starting on http://localhost:${port}`));

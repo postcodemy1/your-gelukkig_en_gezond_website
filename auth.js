@@ -16,6 +16,13 @@ async function api(path, opts = {}) {
     let parsed;
     try { parsed = JSON.parse(txt); } catch(e) { parsed = txt; }
     if (!res.ok) {
+      // If session expired or unauthorized, remove token and send user to home/menu before login
+      if (res.status === 401) {
+        try { localStorage.removeItem('authToken'); } catch(e) {}
+        if (!/login\.html$/.test(location.pathname)) {
+          window.location.replace('index.html');
+        }
+      }
       // return structured error so callers can show friendly messages
       return parsed && parsed.error ? parsed : { error: parsed || res.statusText || ('HTTP ' + res.status) };
     }
@@ -25,11 +32,68 @@ async function api(path, opts = {}) {
   }
 }
 
+function showHandshakeErrorOverlay(status, message) {
+  if (document.getElementById('global-handshake-error')) return;
+  const el = document.createElement('div');
+  el.id = 'global-handshake-error';
+  el.style = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);color:#fff;z-index:99999;padding:1rem;';
+  const title = status ? String(status) : '';
+  const bodyMsg = message || (status === 404 ? "404 — The site couldn't be found." : 'Website is under maintenance, sorry for the inconvenience.');
+  el.innerHTML = `<div style="text-align:center;max-width:900px;padding:2rem;border-radius:8px;background:rgba(17,17,17,0.95)">
+      <div style="font-size:4rem;font-weight:700;margin-bottom:0.5rem">${escapeHtml(title)}</div>
+      <div style="font-size:1.25rem;">${escapeHtml(bodyMsg)}</div>
+    </div>`;
+  document.body.appendChild(el);
+}
+
 function setSessionIndicator() {
   const el = document.getElementById('session-indicator');
   if (!el) return;
-  api('/api/me').then(data => {
-    if (data && !data.error) {
+  showGlobalLoadingOverlay();
+  (async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        hideGlobalLoadingOverlay();
+        el.innerHTML = `<a href="login.html" id="login-link">Inloggen / Registreren</a>`;
+        document.body.classList.remove('client', 'industrial');
+        const q = document.getElementById('quick-links'); if (q) q.remove();
+        return;
+      }
+      const API_BASE = window.API_BASE || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:3000' : '');
+      const res = await fetch((API_BASE || '') + '/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+      let data = null;
+      try { data = await res.json(); } catch (e) { data = null; }
+      if (!res.ok || !data || data.error) {
+        hideGlobalLoadingOverlay();
+        const msg = (data && data.error) ? (typeof data.error === 'string' ? data.error : JSON.stringify(data.error)) : (res.statusText || 'Handshake failed');
+        console.warn('[HANDSHAKE] failed', { status: res.status, message: msg });
+        // Special handling for not-logged-in: send user back to the site home/menu
+        if (res.status === 401) {
+          try { localStorage.removeItem('authToken'); } catch(e) {}
+          // If already on the login page, just show the normal login UI; otherwise redirect to home
+          if (!/login\.html$/.test(location.pathname)) {
+            // navigate to home menu before showing the login screen
+            window.location.replace('index.html');
+            return;
+          }
+          // if on login page, simply restore login link and return
+          el.innerHTML = `<a href="login.html" id="login-link">Inloggen / Registreren</a>`;
+          document.body.classList.remove('client', 'industrial');
+          const q = document.getElementById('quick-links'); if (q) q.remove();
+          return;
+        }
+
+        let displayMsg = '';
+        if (res.status === 404) displayMsg = "404 — The site couldn't be found.";
+        else if (res.status === 403) displayMsg = "403 — Permission denied.";
+        else if (res.status >= 500 && res.status < 600) displayMsg = `${res.status} — Server error. Website is under maintenance, sorry for the inconvenience.`;
+        else displayMsg = 'Website is under maintenance, sorry for the inconvenience.';
+        showHandshakeErrorOverlay(res.status, displayMsg);
+        return;
+      }
+
+      hideGlobalLoadingOverlay();
       // logged in
       el.innerHTML = `Ingelogd als <strong>${escapeHtml(data.name)}</strong>` +
         ` <button id="logout-btn" style="margin-left:0.6rem; padding:0.3rem 0.6rem; border-radius:8px;">Uitloggen</button>`;
@@ -55,16 +119,20 @@ function setSessionIndicator() {
         a.innerHTML = inner;
         wrap.insertBefore(a, wrap.firstChild);
       }
-    } else {
-      el.innerHTML = `<a href="login.html" id="login-link">Inloggen / Registreren</a>`;
-      document.body.classList.remove('client', 'industrial');
-      const q = document.getElementById('quick-links'); if (q) q.remove();
+    } catch (e) {
+      hideGlobalLoadingOverlay();
+      console.error('[HANDSHAKE] network error', e && e.message ? e.message : e);
+      showHandshakeErrorOverlay(0, 'Network error while contacting the API. Website is under maintenance, sorry for the inconvenience.');
     }
-  }).catch(() => { el.innerHTML = `<a href="login.html">Inloggen / Registreren</a>`; });
+  })();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Perform network handshake before showing the site
+  const handshakeOk = await performHandshake();
+  if (!handshakeOk) return; // handshake overlays will block UI and show error
   setSessionIndicator();
+
   // If on login page, wire up forms
   const loginForm = document.getElementById('login-form');
   const regForm = document.getElementById('register-form');
@@ -123,6 +191,90 @@ function showMessage(id, text) {
 }
 
 function escapeHtml(s) { return String(s).replace(/[&"'<>]/g, c => ({'&':'&amp;','"':'&quot;',"'":'&#39;','<':'&lt;','>':'&gt;'}[c])); }
+
+function showGlobalLoadingOverlay() {
+  if (document.getElementById('global-handshake-overlay')) return;
+  const d = document.createElement('div'); d.id = 'global-handshake-overlay';
+  d.style = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);z-index:99998;';
+  d.innerHTML = `<div style="text-align:center;color:#fff;padding:1rem;background:rgba(17,17,17,0.9);border-radius:8px;min-width:220px;">
+    <div style="font-weight:600;margin-bottom:0.5rem">Even controleren…</div>
+    <div style="width:32px;height:32px;border:4px solid rgba(255,255,255,0.15);border-top-color:#fff;border-radius:50%;margin:0 auto;animation:spin 1s linear infinite"></div>
+  </div>`;
+  const style = document.createElement('style'); style.id='global-handshake-overlay-style'; style.innerHTML='@keyframes spin{to{transform:rotate(360deg)}}'; document.head.appendChild(style);
+  document.body.appendChild(d);
+}
+function hideGlobalLoadingOverlay() { const e = document.getElementById('global-handshake-overlay'); if (e) e.remove(); const s=document.getElementById('global-handshake-overlay-style'); if (s) s.remove(); }
+
+// Perform handshake packet exchange with server
+async function tryHandshakeWithBase(base) {
+  try {
+    console.log('[HANDSHAKE] trying base', base || '(relative)');
+    const res = await fetch((base || '') + '/api/handshake', { mode: 'cors' });
+    if (!res.ok) {
+      console.warn('[HANDSHAKE] server packet request failed for', base, res.status);
+      return { ok: false, status: res.status };
+    }
+    const serverPacket = await res.json();
+    console.log('[HANDSHAKE] received server packet', serverPacket);
+    const clientPacket = {
+      echoNonce: serverPacket.nonce,
+      serverVersion: serverPacket.serverVersion,
+      clientTimestamp: Date.now(),
+      browser: navigator.userAgent || '',
+      platform: navigator.platform || '',
+      language: navigator.language || '',
+      vendor: navigator.vendor || ''
+    };
+    console.log('[HANDSHAKE] sending client packet to', base, { echoNonce: clientPacket.echoNonce, browser: clientPacket.browser });
+    const confirmRes = await fetch((base || '') + '/api/handshake/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(clientPacket), mode: 'cors' });
+    if (!confirmRes.ok) {
+      const txt = await confirmRes.text().catch(()=>'(no body)');
+      console.warn('[HANDSHAKE] confirm failed for', base, confirmRes.status, txt);
+      return { ok: false, status: confirmRes.status };
+    }
+    const conf = await confirmRes.json();
+    console.log('[HANDSHAKE] confirm response', conf);
+    return { ok: true, serverPacket };
+  } catch (e) {
+    console.warn('[HANDSHAKE] network error for base', base, e && e.message ? e.message : e);
+    return { ok: false, error: e && e.message ? e.message : e };
+  }
+}
+
+async function performHandshake() {
+  showGlobalLoadingOverlay();
+  const candidates = [];
+  if (window.API_BASE) candidates.push(window.API_BASE.replace(/\/$/, ''));
+  // try relative first (same origin)
+  candidates.push('');
+  // try current host with common dev ports
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    candidates.push(`${location.protocol}//${location.hostname}:3000`);
+    candidates.push(`${location.protocol}//${location.hostname}:3001`);
+  }
+  // also try http://localhost:3000 and 3001 explicitly (covers when served from 127.0.0.1:5500)
+  candidates.push('http://localhost:3000');
+  candidates.push('http://localhost:3001');
+
+  for (const base of candidates) {
+    const r = await tryHandshakeWithBase(base);
+    if (r.ok) {
+      hideGlobalLoadingOverlay();
+      window.HANDSHAKE_OK = true;
+      try { window.dispatchEvent(new CustomEvent('handshake:success', { detail: r.serverPacket })); } catch(e) {}
+      console.log('[HANDSHAKE] completed successfully with base', base || '(relative)');
+      return true;
+    }
+    // small delay so logs appear paced
+    await new Promise(res => setTimeout(res, 150));
+  }
+
+  hideGlobalLoadingOverlay();
+  window.HANDSHAKE_OK = false;
+  try { window.dispatchEvent(new CustomEvent('handshake:failed', { detail: { error: 'all attempts failed' } })); } catch(e) {}
+  showHandshakeErrorOverlay(0, 'Unable to contact API server. Website is under maintenance, sorry for the inconvenience.');
+  return false;
+}
 
 // Theme handling (light/dark) — persists in localStorage
 function applyTheme(theme) {
